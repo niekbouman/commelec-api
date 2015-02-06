@@ -1,8 +1,8 @@
 #ifndef MATHFUNCTIONS_H
 #define MATHFUNCTIONS_H
 
-#include <eigen3/Eigen/Dense>
-#include <eigen3/Eigen/Core>
+#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <capnp/message.h>
 #include "schema.capnp.h"
 

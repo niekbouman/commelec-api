@@ -5,6 +5,9 @@ set(hlapi_sources
   serialization.cpp
 )
 
+set(CAPNPC_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+#   include_directories(${CAPNPC_OUTPUT_DIR})
+capnp_generate_cpp(CAPNP_SRCS CAPNP_HDRS schema.capnp)
 add_library(hlapi SHARED ${hlapi_sources} ${CAPNP_SRCS})
 add_library(hlapi_static ${hlapi_sources} ${CAPNP_SRCS})
 target_link_libraries(hlapi ${CAPNP_LIBRARIES})

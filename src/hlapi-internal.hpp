@@ -2,6 +2,7 @@
 #define HIGHLEVEL_API_INT_HPP
 
 #include "schema.capnp.h"
+//#include "schema.capnp.h"
 
 void _BatteryAdvertisement(msg::Advertisement::Builder adv, double Pmin, double Pmax, double Srated,
                                  double coeffP, double coeffPsquared,

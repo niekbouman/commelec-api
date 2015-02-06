@@ -1,5 +1,5 @@
 #include "polytope-convenience.hpp"
-#include "mathfunctions.h"
+#include "mathfunctions.hpp"
 
 void cv::buildConvexPolytope(Eigen::MatrixXd A, Eigen::VectorXd b,
                              msg::ConvexPolytope::Builder poly) {

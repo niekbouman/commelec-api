@@ -55,15 +55,16 @@ UNOP(Floor)
 UNOP(Ceil)
 UNOP(MultInv)
 UNOP(Abs)
-UNOP(Sgn)
+UNOP(Sign)
 
 // instantiate classes for binary operations
-BINOP(Prod)
 BINOP(Sum)
-BINOP(LessEqThan)
-BINOP(GreaterThan)
+BINOP(Prod)
+BINOP(Pow)
 BINOP(Min)
 BINOP(Max)
+BINOP(LessEqThan)
+BINOP(GreaterThan)
 
 // Every expression is a RealExprBase
 template<typename Kind,typename... CtorArgs>
@@ -105,30 +106,6 @@ template<typename Expr>
 Name<Expr> name(const Ref& ref, Expr ex)
 {
   return Name<Expr>(ref,ex);
-}
-
-// a special unary
-template <typename ExprA,typename ExprB>
-struct _Pow {
-  // can be used to name a (sub-) expression
-  _Pow(ExprA base, ExprB exponent) : _base(base),_exponent(exponent) {}
-  void build(msg::RealExpr::Builder realExpr) {
-    auto unaryop = realExpr.initUnaryOperation();
-    _base.build(unaryop.initArg());
-    _exponent.build(unaryop.initOperation().initPow());
-  }
-private:
-  ExprA _base;
-  ExprB _exponent;
-};
-
-template <typename ExprA,typename ExprB>
-using Pow = RealExprBase<_Pow<ExprA,ExprB>,ExprA, ExprB>;
-
-template<typename ExprA,typename ExprB>
-Pow<ExprA,ExprB> pow(ExprA base, ExprB exp)
-{
-  return Pow<ExprA,ExprB>(base,exp);
 }
 
 struct _Real {
@@ -195,11 +172,12 @@ UNOPFUN(round,Round)
 UNOPFUN(floor,Floor)
 UNOPFUN(ceil,Ceil)
 UNOPFUN(abs,Abs)
-UNOPFUN(sign,Sgn)
+UNOPFUN(sign,Sign)
 
 // instantiate convenience functions for using the binary operation classes 
 BINOPFUN(max,Max)
 BINOPFUN(min,Min)
+BINOPFUN(pow,Pow)
 
 // define +,-,*,/ operators that bind only to RealExprBase expressions
 template<typename TypeA,typename TypeB, typename... CtorArgsA, typename... CtorArgsB>

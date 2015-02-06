@@ -2,6 +2,7 @@
 #define SERIALIZATION_H
 
 #include <kj/io.h>
+#include <capnp/message.h>
 #include <vector>
 
 size_t messageByteSize(::capnp::MessageBuilder &builder);

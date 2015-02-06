@@ -1,5 +1,5 @@
 #include "hlapi.h"
-#include "hlapi_internal.hpp"
+#include "hlapi-internal.hpp"
 #include "schema.capnp.h"
 #include "serialization.hpp"
 #include "polytope-convenience.hpp"
@@ -9,7 +9,7 @@
 #include <cstring>
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
-#include <eigen3/Eigen/Core>
+#include <Eigen/Core>
 
 int32_t parseRequest(const uint8_t *inBuffer, int32_t bufSize, double *P,
                      double *Q, uint32_t *senderId) {

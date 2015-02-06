@@ -1,4 +1,4 @@
-#include "mathfunctions.h"
+#include "mathfunctions.hpp"
 
 using namespace msg;
 
