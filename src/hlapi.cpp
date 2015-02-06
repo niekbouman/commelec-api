@@ -122,6 +122,22 @@ void _BatteryAdvertisement(msg::Advertisement::Builder adv, double Pmin,
                                                coeffP * Pvar);
 }
 
+int32_t makeFuelCellAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
+                                  int32_t *packedBytesize, uint32_t agentId,
+                                  double Pmin, double Pmax, double Srated,
+                                  double coeffP, double coeffPsquared,
+                                  double coeffPcubed)
+{
+  // fuel cell is like battery but cannot consume power
+  if ((Pmin < 0) || (Pmax < 0))
+    return hlapi_illegal_input;
+  return makeBatteryAdvertisement(outBuffer, maxBufSize, packedBytesize,
+                                  agentId, Pmin, Pmax, Srated, coeffP,
+                                  coeffPsquared, coeffPcubed);
+}
+
+
+
 int32_t makePVAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
                             int32_t *packedBytesize, uint32_t agentId,
                             double Srated, double Pmax, double Pdelta,

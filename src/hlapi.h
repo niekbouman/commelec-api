@@ -91,18 +91,11 @@ int32_t makeBatteryAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
 //     cf(p,q) = coeffPcubed * p^3 + coeffPsquared * p^2 + coeffP * p
 //
 
-inline int32_t makeFuelCellAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
+int32_t makeFuelCellAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
                                   int32_t *packedBytesize, uint32_t agentId,
                                   double Pmin, double Pmax, double Srated,
                                   double coeffP, double coeffPsquared,
-                                  double coeffPcubed) {
-  // fuel cell is like battery but cannot consume power
-  if ((Pmin < 0) || (Pmax < 0))
-    return hlapi_illegal_input;
-  return makeBatteryAdvertisement(outBuffer, maxBufSize, packedBytesize,
-                                  agentId, Pmin, Pmax, Srated, coeffP,
-                                  coeffPsquared, coeffPcubed);
-}
+                                  double coeffPcubed);
 
 int32_t makePVAdvertisement(uint8_t *outBuffer, int32_t maxbufsize,
                             int32_t *packedBytesize, uint32_t deviceId,
