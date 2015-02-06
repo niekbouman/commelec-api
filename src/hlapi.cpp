@@ -61,15 +61,12 @@ int32_t makeBatteryAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
                                  int32_t *packedBytesize, uint32_t agentId,
                                  double Pmin, double Pmax, double Srated,
                                  double coeffP, double coeffPsquared,
-                                 double coeffPcubed) {
+                                 double coeffPcubed, double Pimp, double Qimp) {
   try {
     ::capnp::MallocMessageBuilder builder;
     auto msg = builder.initRoot<msg::Message>();
     msg.setAgentId(agentId);
     auto adv = msg.getAdvertisement();
-
-    auto Pimp = 0.0;
-    auto Qimp = 0.0;
 
     _BatteryAdvertisement(adv, Pmin, Pmax, Srated, coeffP, coeffPsquared,
                           coeffPcubed,Pimp,Qimp);
@@ -90,6 +87,10 @@ void _BatteryAdvertisement(msg::Advertisement::Builder adv, double Pmin,
                            double Pmax, double Srated, double coeffP,
                            double coeffPsquared, double coeffPcubed,
                            double Pimp, double Qimp) {
+
+  auto setpoint = adv.initImplementedSetpoint(2);
+  setpoint.set(0, Pimp);
+  setpoint.set(1, Qimp);
 
   // PQ Profile: intersection of disk and band
   auto pqprof = adv.getPQProfile();
@@ -126,22 +127,21 @@ int32_t makeFuelCellAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
                                   int32_t *packedBytesize, uint32_t agentId,
                                   double Pmin, double Pmax, double Srated,
                                   double coeffP, double coeffPsquared,
-                                  double coeffPcubed)
-{
+                                  double coeffPcubed, double Pimp,
+                                  double Qimp) {
   // fuel cell is like battery but cannot consume power
   if ((Pmin < 0) || (Pmax < 0))
     return hlapi_illegal_input;
   return makeBatteryAdvertisement(outBuffer, maxBufSize, packedBytesize,
                                   agentId, Pmin, Pmax, Srated, coeffP,
-                                  coeffPsquared, coeffPcubed);
+                                  coeffPsquared, coeffPcubed,Pimp,Qimp);
 }
-
-
 
 int32_t makePVAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
                             int32_t *packedBytesize, uint32_t agentId,
                             double Srated, double Pmax, double Pdelta,
-                            double tanPhi, double a_pv, double b_pv) {
+                            double tanPhi, double a_pv, double b_pv,
+                            double Pimp, double Qimp) {
   try {
 
     if (a_pv <= 0.0)
@@ -154,9 +154,6 @@ int32_t makePVAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
     auto msg = builder.initRoot<msg::Message>();
     msg.setAgentId(agentId);
     auto adv = msg.initAdvertisement();
-
-    auto Pimp = 0.0;
-    auto Qimp = 0.0;
 
     _PVAdvertisement(adv, Srated, Pmax, Pdelta, tanPhi, a_pv, b_pv, Pimp, Qimp);
 
@@ -176,6 +173,10 @@ void _PVAdvertisement(msg::Advertisement::Builder adv, double Srated,
                       double b_pv, double Pimp, double Qimp) {
 
   using namespace cv;
+
+  auto setpoint = adv.initImplementedSetpoint(2);
+  setpoint.set(0, Pimp);
+  setpoint.set(1, Qimp);
 
   // PQ profile: intersection of polytope and disk
   auto pqprof = adv.initPQProfile();

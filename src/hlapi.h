@@ -61,7 +61,7 @@ int32_t makeBatteryAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
                                  int32_t *packedBytesize, uint32_t agentId,
                                  double Pmin, double Pmax, double Srated,
                                  double coeffP, double coeffPsquared,
-                                 double coeffPcubed);
+                                 double coeffPcubed, double Pimp, double Qimp);
 // Make advertisement for a battery resource agent
 //
 // Packed advertisement (the serialized message) is written to buffer.
@@ -95,12 +95,13 @@ int32_t makeFuelCellAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
                                   int32_t *packedBytesize, uint32_t agentId,
                                   double Pmin, double Pmax, double Srated,
                                   double coeffP, double coeffPsquared,
-                                  double coeffPcubed);
+                                  double coeffPcubed, double Pimp, double Qimp);
 
 int32_t makePVAdvertisement(uint8_t *outBuffer, int32_t maxbufsize,
                             int32_t *packedBytesize, uint32_t deviceId,
                             double Srated, double Pmax, double Pdelta,
-                            double tanPhi, double a_pv, double b_pv);
+                            double tanPhi, double a_pv, double b_pv,
+                            double Pimp, double Qimp);
 
 #ifdef __cplusplus
 }
