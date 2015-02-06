@@ -1,0 +1,10 @@
+#!/bin/sh
+
+echo "Creating host build" && \
+mkdir -p _build && cd _build && cmake -DCMAKE_BUILD_TYPE=Release .. && cd .. && \
+echo "Creating Linux-ARM build" && \
+mkdir -p _linux-arm_build  && cd _linux-arm_build && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../toolchains/linux-arm-toolchain.cmake .. && cd .. &&\
+echo "Creating Windows build" && \
+mkdir -p _win-x86_build  && cd _win-x86_build && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../toolchains/windows-x86-toolchain.cmake .. && \
+echo Done
+

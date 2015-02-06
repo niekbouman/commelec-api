@@ -1,8 +1,8 @@
 set(HOST arm-linux-gnueabihf)
 set(CMAKE_SYSTEM_NAME Linux)
 
-#set(CMAKE_C_COMPILER "${HOST}-gcc-4.9")
-#set(CMAKE_CXX_COMPILER "${HOST}-g++-4.9")
+set(CMAKE_C_COMPILER "${HOST}-gcc-4.9")
+set(CMAKE_CXX_COMPILER "${HOST}-g++-4.9")
 
 # here is the target environment located
 set(CMAKE_FIND_ROOT_PATH "/usr/${HOST}")

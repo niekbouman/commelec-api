@@ -1,0 +1,10 @@
+;
+; Manually set exported symbols in DLL
+;
+; (we do not want to export all symbols, which is the default behavior)
+LIBRARY "libhlapi.dll"
+EXPORTS
+parseRequest
+makeBatteryAdvertisement
+makeFuelCellAdvertisement
+makePVAdvertisement
