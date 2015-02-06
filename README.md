@@ -4,9 +4,9 @@
 
 *Commelec* is a control framework for *modern* electrical grids. By a modern grid, we mean a grid involving volatile and weather-dependent sources, like wind turbines and photo-voltaic (PV) panels, loads such as heat pumps, and storage elements, like batteries, supercapacitors, or an electrolyser+fuel cell.
 
-Commelec is a distributed real-time control framework. Resources inform their local controller about their state and desired operating point by means of advertising a collection of mathematical objects (more precisely, but informally, a cost function, a set-valued function, and the common domain of those functions (a set). We use the term *resource agent* for the software agent that is responsible for communicating with the (decentralized) controller. Hence, one of the tasks is to -- typically periodically -- construct an advertisement. Another common task is to parse a *request* message sent from the controller to a resource.
+Commelec is a distributed real-time control framework. Resources inform their local controller about their state and desired operating point by means of sending a collection of mathematical objects; we call this an *advertisement*. More precisely, but informally, an advertisement consists of a cost function, another set-valued function, and the common domain of those functions (which is a convex set). We use the term *resource agent* for the software agent that is responsible for communicating with the (decentralized) controller. Hence, one of the tasks is to -- typically periodically -- construct an advertisement. Another common task is to parse a *request* message sent from the controller to a resource.
 
-Commelec's *message format* specifies how the *requests* and *advertisements* are to be encoded into a sequence of bytes, suitable for transmission over a packet network. The message format is defined in terms of a [Cap 'n Proto](capnproto.org) [schema](https://capnproto.org/language.html). The schema can be found [here](https://github.com/niekbouman/commelec-api/blob/master/src/schema.capnp).
+Commelec's *message format* specifies how the *requests* and *advertisements* are to be encoded into a sequence of bytes, suitable for transmission over a packet network. The message format is defined in terms of a [Cap'n Proto](https://capnproto.org) [schema](https://capnproto.org/language.html). The schema can be found [here](https://github.com/niekbouman/commelec-api/blob/master/src/schema.capnp).
 
 ## High-Level and Low-Level API
 
@@ -29,6 +29,8 @@ For example, to express the function `f: R x R -> R`, `(P,Q) \mapsto P + sin(4*Q
 ```C++
 //we assume f is of type msg::RealExpr::Builder
 
+#include <commelec-api/src/schema.capnp.h>
+
 auto binOp = f.initBinaryOperation();
 binOp.getOperation().setSum();
 binOp.getArgA().setReference("P");
@@ -49,6 +51,7 @@ Hence, we provide a convenience function for parsing human-writable mathematical
 // defining f using the convenience function
 
 #include <commelec-api/src/realexpr-convenience.hpp>
+using namespace cv; // namespace for the convenience functions
 
 Ref P("P");
 Ref Q("Q");
