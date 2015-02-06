@@ -1,5 +1,3 @@
-@0xcadbcdbd64e38f8a;
-
 # The MIT License (MIT)
 # 
 # Copyright (c) 2015 Andrey Bernstein and Niek J. Bouman
@@ -22,8 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # 
-
-
+@0xdb1b4800e80dbd2d;
 using Cxx = import "/capnp/c++.capnp";
 $Cxx.namespace("msg");
 #
