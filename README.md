@@ -2,7 +2,7 @@
 
 ## Message format specification and API for the Commelec Smart-Grid-control platform.
 
-*Commelec* is a control framework for *modern* electrical grids. By a modern grid, we mean a grid involving volatile and weather-dependent sources, like wind turbines and photo-voltaic (PV) panels, loads such as heat pumps, and storage elements, like batteries, supercapacitors, or an electrolyser+fuel cell.
+*Commelec* is a control framework for modern electrical grids. By a "modern grid", we mean a grid involving volatile and weather-dependent sources, like wind turbines and photo-voltaic (PV) panels, loads such as heat pumps, and storage elements, like batteries, supercapacitors, or an electrolyser+fuel cell.
 
 Commelec is a distributed real-time control framework. Resources inform their local controller about their state and desired operating point by means of sending a collection of mathematical objects; we call this an *advertisement*. More precisely, but informally, an advertisement consists of a cost function, another set-valued function, and the common domain of those functions (which is a convex set). We use the term *resource agent* for the software agent that is responsible for communicating with the (decentralized) controller. Hence, one of the tasks is to -- typically periodically -- construct an advertisement. Another common task is to parse a *request* message sent from the controller to a resource.
 
@@ -21,9 +21,22 @@ Also, the high-level API demonstrates the use of the low-level API. Hence, when 
 We have written (in C++11) some convenience functions for easily constructing certain mathematical objects that we define in the schema, like polynomials or (convex) polytopes. Note that we view those convenience functions as part of the low-level API.
 
 ## Explanation of the Schema
-The top-level structs `Message`, `Request`, and `Advertisement` should be self-explaining.
+The top-level struct is `Message`, which either contains a `Request`, or an `Advertisement`. 
+//Their definition should be self-explaining.
+The `Advertisement` message is the most interesting of the latter two. It contains the following fields:
+* a *PQ Profile*, which is encoded as a `SetExpr`,
+* a *Belief Function* (a set-valued function) which is also encoded as a `SetExpr` that has real-valued parameters "P" and "Q" (i.e., both encoded via `RealExpr`essions of type *Reference*), 
+* and a *Cost Function*, which is encoded as a `RealExpr` having real-valued parameters "P" and "Q".
 
+### A `RealExpr` has a *type*
 The `RealExpr` struct represents a real-valued expression, encoded as an abstract syntax tree. 
+Each `RealExpr` is of some type, for example `Real`, `Reference` or `UnaryOperation`.
+
+### Naming `RealExpr`essions and `SetExpr`essions and referring back to them
+Additionally, a `RealExpr` can be given a name, which is useful if you define an expression that you want to reuse. For example, say that you define a `RealExpr` as part of the definion of a PQ profile, and you need the same `RealExpr` also in the cost function. In such case, you can give the `RealExpr` a name by setting the `name` field to some string, for example, "a", and then use a `RealExpr` of type *Reference* set to "a" somewhere in the definition of that cost function. Similarly, a `SetExpr` can be given a name, too.
+Note that the name string appears directly in the advertisement, so assigning short names is good practice as it will result in shorter message sizes. 
+
+### Example: Defining a `RealExpr`
 For example, to express the function `f: R x R -> R`, `(P,Q) \mapsto P + sin(4*Q)` by hand, we break down the expression as a binary operation (`+`, i.e., addition) between the symbolic variable `P` and the unary operation (`sin`) applied to (the result of) a binary operation (`*`, i.e., multiplication) between the real (immediate) value 4 and the symbolic variable `Q`.
 
 ```C++
