@@ -21,12 +21,14 @@ Also, the high-level API demonstrates the use of the low-level API. Hence, when 
 We have written (in C++11) some convenience functions for easily constructing certain mathematical objects that we define in the schema, like polynomials or (convex) polytopes. Note that we view those convenience functions as part of the low-level API.
 
 ## Explanation of the Schema
+To understand the text below, you should first have a look at the definition of the [schema](https://github.com/niekbouman/commelec-api/blob/master/src/schema.capnp).
+
 The top-level struct is `Message`, which either contains a `Request`, or an `Advertisement`. 
-//Their definition should be self-explaining.
 The `Advertisement` message is the most interesting of the latter two. It contains the following fields:
 * a *PQ Profile*, which is encoded as a `SetExpr`,
 * a *Belief Function* (a set-valued function) which is also encoded as a `SetExpr` that has real-valued parameters "P" and "Q" (i.e., both encoded via `RealExpr`essions of type *Reference*), 
 * and a *Cost Function*, which is encoded as a `RealExpr` having real-valued parameters "P" and "Q".
+* the *Implemented Setpoint*, which is the power setpoint, encoded as the list "[P,Q]" (of length 2), that the follower (the sender of the Advertisement) has just implemented. 
 
 ### A `RealExpr` has a *type*
 The `RealExpr` struct represents a real-valued expression, encoded as an abstract syntax tree. 
