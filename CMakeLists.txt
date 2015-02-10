@@ -3,8 +3,7 @@ project (CommelecAPI)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 set(CMAKE_CXX_FLAGS "-std=c++11 ${ADDITIONAL_CXX_FLAGS}") 
-#set(CMAKE_SHARED_LINKER_FLAGS "-static-libgcc -static-libstdc++ ${ADDITIONAL_LINKER_FLAGS}")
-set(CMAKE_SHARED_LINKER_FLAGS "-static-libstdc++ ${ADDITIONAL_LINKER_FLAGS}")
+set(CMAKE_SHARED_LINKER_FLAGS "-static-libgcc -static-libstdc++ ${ADDITIONAL_LINKER_FLAGS}")
 
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
