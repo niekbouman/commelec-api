@@ -2,7 +2,7 @@
 
 ## Message format specification and API for the Commelec Smart-Grid-control platform.
 
-*Commelec* is a control framework for modern electrical grids. By a "modern grid", we mean a grid involving volatile and weather-dependent sources, like wind turbines and photo-voltaic (PV) panels, loads such as heat pumps, and storage elements, like batteries, supercapacitors, or an electrolyser+fuel cell.
+*Commelec* is a control framework for modern electrical grids. By a "modern grid", we mean a grid involving volatile and weather-dependent sources, like wind turbines and photo-voltaic (PV) panels, loads such as heat pumps, and storage elements, like batteries, supercapacitors, or an electrolyser combined with a fuel cell.
 
 Commelec is a distributed real-time control framework. Resources inform their local controller about their state and desired operating point by means of sending a collection of mathematical objects; we call this an *advertisement*. More precisely, but informally, an advertisement consists of a cost function, another set-valued function, and the common domain of those functions (which is a convex set). We use the term *resource agent* for the software agent that is responsible for communicating with the (decentralized) controller. Hence, one of the tasks is to -- typically periodically -- construct an advertisement. Another common task is to parse a *request* message sent from the controller to a resource.
 
@@ -19,6 +19,55 @@ We use the term *high-level API* (and the abbreviation *hlapi*) for a collection
 Also, the high-level API demonstrates the use of the low-level API. Hence, when you want to write a function for constructing an advertisement for your resources which is not supported in the high-level API, the implementation code of the high-level API could serve as an example and/or as a starting point for your custom function.
 
 We have written (in C++11) some convenience functions for easily constructing certain mathematical objects that we define in the schema, like polynomials or (convex) polytopes. Note that we view those convenience functions as part of the low-level API.
+
+## Library and Compiler Dependencies
+The C++ API code depends on the following libraries:
+* [Cap'n Proto](https://capnproto.org), >= 0.5.0
+* [Eigen3](http://eigen.tuxfamily.org/), >= 3.0.0 (a header-only library)
+
+The C++ API uses [C++11](http://en.wikipedia.org/wiki/C++11), hence needs a newer compiler (e.g., one of those listed below):
+* GNU C/C++ compiler >= 4.8 (Linux)
+* Clang >= 3.3 (MacOS, FreeBSD)
+* Visual C++ >= 2015 (Windows)
+* MinGW-w64 >= 3 (for cross-compiling to Windows)
+
+## Pre-Compiled Builds of the High-Level API
+We currently provide [precompiled builds](http://smartgrid.epfl.ch/?q=node/14) for Windows (x86, 32 bit) and ARM.
+
+## Usage Example of the High-Level API
+
+```C++
+// parsing a Request
+
+#include <iostream>
+#include <commelec-api/src/hlapi.h>
+
+constexpr int32_t sz = 1024;
+uint8_t buffer[sz];
+
+// ... buffer is filled with the serialised Request data (e.g., by reading data from a socket)
+
+double P = 0.0;
+double Q = 0.0;
+uint32_t senderId;
+
+auto status = parseRequest(buffer, sz, &P, &Q, &senderId);
+
+if (status==1)
+{
+  std::cout << "Received request with power setpoint: P = " << P << ", Q = " << Q << std::endl;
+  std::cout << "Agent ID of the sender (our leader) " << senderId << std::endl;
+}
+else if(status==0)
+{
+  std::cout << "Received a request for an advertisement. Request does not include a setpoint." << std::endl;
+  std::cout << "Agent ID of the sender (our leader) " << senderId << std::endl;
+}
+else if(status<0)
+  std::cout << "Error while parsing request" << std::endl; 
+else
+  std::cout << "Unknown return code" << std::endl; 
+```
 
 ## Explanation of the Schema
 To understand the text below, you should first have a look at the definition of the [schema](https://github.com/niekbouman/commelec-api/blob/master/src/schema.capnp).
