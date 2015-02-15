@@ -86,6 +86,7 @@ A `SetExpr` represents a closed convex set in arbitrary dimension. We will mostl
 * an *n*-ball (in 2-D, this simplifies to a disk)
 * an *n*-orthotope or hyperrectangle (in 1-D, this simplifies to an interval, and in 2-D to a rectangle)
 * a polytope, encoded in the "H-representation" (i.e., as an intersection of half-spaces)
+
 Also, one can make intersections between the above types.
 We currently do not support taking unions, because the result of a union of convex sets need not be convex.
 
@@ -95,17 +96,16 @@ Just like a `SetExpr` encodes a particular set type (for example ball or rectang
 * an immediate value of type double (IEEE 754 double-precision floating point)
 * a symbolic variable name (for example "x"), via the *Reference* field
 * an *operation*, acting on:
-** another `RealExpr`, i.e., a `UnaryOperation` (for example, sin, cos, log)
-** two `RealExpr`essions, i.e., a `BinaryOperation` (to express addition, multiplication, min, max, etc.)
-** a list of `RealExpr`, called a `ListOperation` (currently, only addition and multiplication)
+  * another `RealExpr`, i.e., a `UnaryOperation` (for example, sin, cos, log)
+  * two `RealExpr`essions, i.e., a `BinaryOperation` (to express addition, multiplication, min, max, etc.)
+  * a list of `RealExpr`, called a `ListOperation` (currently, only addition and multiplication)
+* a polynomial, which we call a "short-cut" type, because a polynomial can in principle be encoded via immediate values and operations (sums, powers), however, using a dedicated polynomial type has some implementational benefits and usually leads to smaller message sizes.
 
 ### Naming `RealExpr`essions and `SetExpr`essions and referring back to them
 Additionally, a `RealExpr` can be given a name, which is useful if you define an expression that you want to reuse. For example, say that you define a `RealExpr` as part of the definion of a PQ profile, and you need the same `RealExpr` also in the cost function. In such case, you can give the `RealExpr` a name by setting the `name` field to some string, for example, "a", and then use a `RealExpr` of type *Reference* set to "a" somewhere in the definition of that cost function. Similarly, a `SetExpr` can be given a name, too.
 Note that the name string appears directly in the advertisement, so assigning short names is good practice as it will result in shorter message sizes. 
 
-Since the *Reference* field of the `RealExpr` struct type has two uses (
-for defining symbolic variables that act a function arguments and for referring back to a named expression),
-one must be careful not to use the same name (i.e., a string) for a symbolic variable and for (naming) an expression.
+Since the *Reference* field of the `RealExpr` struct type has two uses (for defining symbolic variables that act a function arguments and for referring back to a named expression), one must be careful not to use the same name (i.e., a string) for a symbolic variable and for (naming) an expression.
 
 ### Example: Defining a Real-Valued Function
 For example, to express the function `f: R x R -> R`, `(P,Q) \mapsto P + sin(4*Q)` by hand, we break down the expression as a binary operation (`+`, i.e., addition) between the symbolic variable `P` and the unary operation (`sin`) applied to (the result of) a binary operation (`*`, i.e., multiplication) between the real (immediate) value 4 and the symbolic variable `Q`.
