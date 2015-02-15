@@ -16,7 +16,7 @@ We will refer to the automatically generated API as the *low-level API*.
 
 We use the term *high-level API* (and the abbreviation *hlapi*) for a collection of functions (each with a C function prototype) for constructing advertisements for various commonly used resources. Each such function is tailored to a specific resource. Currently, we provide functions for constructing advertisements for a battery, a fuel cell, and a PV, as well a function to parse a request (the latter is independent of the resource). 
 
-Also, the high-level API demonstrates the use of the low-level API. Hence, when you want to write a function for constructing an advertisement for your resources which is not supported in the high-level API, the implementation code of the high-level API could serve as an example and/or as a starting point for your custom function.
+Also, the high-level API demonstrates the use of the low-level API. Hence, when you want to write a function for constructing an advertisement for a resource that is not supported in the high-level API, the implementation code of the high-level API could serve as an example and/or as a starting point for your custom function.
 
 We have written (in C++11) some convenience functions for easily constructing certain mathematical objects that we define in the schema, like polynomials or (convex) polytopes. Note that we view those convenience functions as part of the low-level API.
 
@@ -76,8 +76,8 @@ To understand the text below, you should first have a look at the definition of 
 The top-level struct is `Message`, which either contains a `Request`, or an `Advertisement`. 
 The `Advertisement` message is the most interesting of the latter two. It contains the following fields:
 * a *PQ Profile*, which is encoded as a `SetExpr`,
-* a *Belief Function* (a set-valued function) which is also encoded as a `SetExpr` that has real-valued parameters "P" and "Q" (i.e., both encoded via `RealExpr`essions of type *Reference*), 
-* and a *Cost Function*, which is encoded as a `RealExpr` having real-valued parameters "P" and "Q".
+* a *Belief Function* (a set-valued function) which is also encoded as a `SetExpr` that has real-valued symbolic variables "P" and "Q" (i.e., both encoded via `RealExpr`essions of type *Reference*), 
+* and a *Cost Function*, which is encoded as a `RealExpr` having real-valued symbolic variables "P" and "Q".
 * the *Implemented Setpoint*, which is the power setpoint, encoded as the list "[P,Q]" (of length 2), that the follower (the sender of the Advertisement) has just implemented. 
 
 ### The `SetExpr` struct type
@@ -99,7 +99,7 @@ Just like a `SetExpr` encodes a particular set type (for example ball or rectang
   * another `RealExpr`, i.e., a `UnaryOperation` (for example, sin, cos, log)
   * two `RealExpr`essions, i.e., a `BinaryOperation` (to express addition, multiplication, min, max, etc.)
   * a list of `RealExpr`, called a `ListOperation` (currently, only addition and multiplication)
-* a polynomial, which we call a "short-cut" type, because a polynomial can in principle be encoded via immediate values and operations (sums, powers), however, using a dedicated polynomial type has some implementational benefits and usually leads to smaller message sizes.
+* a uni- or multivariate polynomial. Note that we call the `Polynomial` struct a "short-cut" type, because a polynomial can in principle be encoded via immediate values, symbolic variables and operations (sums, powers), however, having a dedicated polynomial type has some implementational benefits and its use typically leads to smaller message sizes.
 
 ### Naming `RealExpr`essions and `SetExpr`essions and referring back to them
 Additionally, a `RealExpr` can be given a name, which is useful if you define an expression that you want to reuse. For example, say that you define a `RealExpr` as part of the definion of a PQ profile, and you need the same `RealExpr` also in the cost function. In such case, you can give the `RealExpr` a name by setting the `name` field to some string, for example, "a", and then use a `RealExpr` of type *Reference* set to "a" somewhere in the definition of that cost function. Similarly, a `SetExpr` can be given a name, too.
