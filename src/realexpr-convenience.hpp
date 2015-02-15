@@ -34,9 +34,7 @@
 #include "schema.capnp.h"
 #include "polynomial-convenience.hpp"
 
-//#include<iostream> 
 // some macros for repetitive stuff
-
 #define BINOP(name) struct name { \
   void setOp(msg::BinaryOperation::Builder binOp){ \
     binOp.initOperation().set ## name(); \
@@ -218,9 +216,9 @@ operator*(RealExprBase<TypeA,CtorArgsA...> a, RealExprBase<TypeB,CtorArgsB...> b
   return BinaryOp<RealExprBase<TypeA,CtorArgsA...>,RealExprBase<TypeB,CtorArgsB...>,Prod>(a, b); 
 } 
 template<typename TypeA,typename TypeB, typename... CtorArgsA, typename... CtorArgsB>
-BinaryOp<RealExprBase<TypeA,CtorArgsA...>, RealExprBase<TypeB,CtorArgsB...>, Sum> 
+BinaryOp<RealExprBase<TypeA,CtorArgsA...>, RealExprBase<TypeB,CtorArgsB...>, Prod> 
 operator/(RealExprBase<TypeA,CtorArgsA...> a, RealExprBase<TypeB,CtorArgsB...> b) { 
-  return BinaryOp<RealExprBase<TypeA,CtorArgsA...>,RealExprBase<TypeB,CtorArgsB...>,Sum>(a, UnaryOp<RealExprBase<TypeB,CtorArgsB...>,MultInv>(b)); 
+  return BinaryOp<RealExprBase<TypeA,CtorArgsA...>,RealExprBase<TypeB,CtorArgsB...>,Prod>(a, UnaryOp<RealExprBase<TypeB,CtorArgsB...>,MultInv>(b)); 
 } 
 
 // toplevel build function
