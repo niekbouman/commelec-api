@@ -5,9 +5,9 @@
 *Commelec* is distributed real-time a control framework for modern electrical grids. By a "modern grid", we mean a grid involving volatile and weather-dependent sources, like wind turbines and photo-voltaic (PV) panels, loads such as heat pumps, and storage elements, like batteries, supercapacitors, or an electrolyser combined with a fuel cell.
 
 Resources and (distributed) controllers exchange control information over a packet network. Resources inform their local controller about their capabilities, current state and desired operating point by means of sending a collection of mathematical objects; we call this an *advertisement*. More precisely, but informally, an advertisement consists of:
-* the capability curve of the associated inverter or generator (essentially, a convex set in the P-Q plane, where P represents active power and Q represents reactive power). We denote this set by `A`
-* a set-valued function defined on `A`, which aims to capture the uncertainty that is present in the process of implementing a requested *power setpoint* (i.e., a point in `A`)
-* a real-valued cost function defined on `A`.
+* the capability curve of the associated inverter or generator (essentially, a convex set in the P-Q plane, where P represents active power and Q represents reactive power). Let us denote this set by *A*.
+* a set-valued function defined on *A*, which aims to capture the uncertainty that is present in the process of implementing a requested *power setpoint* (i.e., a point in *A*)
+* a real-valued cost function defined on *A*.
 We use the term *resource agent* for the software agent that is responsible for communicating with the (decentralized) controller. Hence, one of the tasks of a resource agent is to -- typically periodically -- construct an advertisement. Another common task of a resource agent is to parse a *request* message sent from the controller to a resource.
 
 Commelec's *message format* specifies how the *requests* and *advertisements* are to be encoded into a sequence of bytes, suitable for transmission over a packet network. The message format is defined in terms of a [Cap'n Proto](https://capnproto.org) [schema](https://capnproto.org/language.html). The schema can be found [here](https://github.com/niekbouman/commelec-api/blob/master/src/schema.capnp).
