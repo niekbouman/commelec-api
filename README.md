@@ -2,12 +2,9 @@
 
 ## Message format specification and API for the Commelec Smart-Grid-control platform.
 
-*Commelec* is a control framework for modern electrical grids. By a "modern grid", we mean a grid involving volatile and weather-dependent sources, like wind turbines and photo-voltaic (PV) panels, loads such as heat pumps, and storage elements, like batteries, supercapacitors, or an electrolyser combined with a fuel cell.
+*Commelec* is distributed real-time a control framework for modern electrical grids. By a "modern grid", we mean a grid involving volatile and weather-dependent sources, like wind turbines and photo-voltaic (PV) panels, loads such as heat pumps, and storage elements, like batteries, supercapacitors, or an electrolyser combined with a fuel cell.
 
-Commelec is a distributed real-time control framework. 
-Resources and (distributed) controllers exchange control information over a packet network. 
-
-Resources inform their local controller about their capabilities, current state and desired operating point by means of sending a collection of mathematical objects; we call this an *advertisement*. More precisely, but informally, an advertisement consists of:
+Resources and (distributed) controllers exchange control information over a packet network. Resources inform their local controller about their capabilities, current state and desired operating point by means of sending a collection of mathematical objects; we call this an *advertisement*. More precisely, but informally, an advertisement consists of:
 * the capability curve of the associated inverter or generator (essentially, a convex set in the P-Q plane, where P represents active power and Q represents reactive power). We denote this set by `A`
 * a set-valued function defined on `A`, which aims to capture the uncertainty that is present in the process of implementing a requested *power setpoint* (i.e., a point in `A`)
 * a real-valued cost function defined on `A`.
