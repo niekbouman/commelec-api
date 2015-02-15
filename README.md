@@ -4,7 +4,7 @@
 
 *Commelec* is a control framework for modern electrical grids. By a "modern grid", we mean a grid involving volatile and weather-dependent sources, like wind turbines and photo-voltaic (PV) panels, loads such as heat pumps, and storage elements, like batteries, supercapacitors, or an electrolyser combined with a fuel cell.
 
-Commelec is a distributed real-time control framework. Resources inform their local controller about their state and desired operating point by means of sending a collection of mathematical objects; we call this an *advertisement*. More precisely, but informally, an advertisement consists of a cost function, another set-valued function, and the common domain of those functions (which is a convex set). We use the term *resource agent* for the software agent that is responsible for communicating with the (decentralized) controller. Hence, one of the tasks is to -- typically periodically -- construct an advertisement. Another common task is to parse a *request* message sent from the controller to a resource.
+Commelec is a distributed real-time control framework. Resources inform their local controller about their state and desired operating point by means of sending a collection of mathematical objects; we call this an *advertisement*. More precisely, but informally, an advertisement consists of a cost function, another set-valued function, and the common domain of those functions (which is a convex set). We use the term *resource agent* for the software agent that is responsible for communicating with the (decentralized) controller. Hence, one of the tasks of a resource agent is to -- typically periodically -- construct an advertisement. Another common task of a resource agent is to parse a *request* message sent from the controller to a resource.
 
 Commelec's *message format* specifies how the *requests* and *advertisements* are to be encoded into a sequence of bytes, suitable for transmission over a packet network. The message format is defined in terms of a [Cap'n Proto](https://capnproto.org) [schema](https://capnproto.org/language.html). The schema can be found [here](https://github.com/niekbouman/commelec-api/blob/master/src/schema.capnp).
 
@@ -35,6 +35,7 @@ The C++ API uses [C++11](http://en.wikipedia.org/wiki/C++11), hence needs a newe
 We currently provide [precompiled builds](http://smartgrid.epfl.ch/?q=node/14) for Windows (x86, 32 bit) and ARM.
 
 ## Usage Example of the High-Level API
+Let us demonstrate how to parse a request.
 
 ```C++
 // parsing a Request
@@ -79,15 +80,34 @@ The `Advertisement` message is the most interesting of the latter two. It contai
 * and a *Cost Function*, which is encoded as a `RealExpr` having real-valued parameters "P" and "Q".
 * the *Implemented Setpoint*, which is the power setpoint, encoded as the list "[P,Q]" (of length 2), that the follower (the sender of the Advertisement) has just implemented. 
 
-### A `RealExpr` has a *type*
+### The `SetExpr` struct type
+A `SetExpr` represents a closed convex set in arbitrary dimension. We will mostly consider one- and two-dimensional sets. Currently, one can encode the following types
+* a singleton (encoded as a list of `RealExpr`essions)
+* an *n*-ball (in 2-D, this simplifies to a disk)
+* an *n*-orthotope or hyperrectangle (in 1-D, this simplifies to an interval, and in 2-D to a rectangle)
+* a polytope, encoded in the "H-representation" (i.e., as an intersection of half-spaces)
+Also, one can make intersections between the above types.
+We currently do not support taking unions, because the result of a union of convex sets need not be convex.
+
+### The `RealExpr` struct type
 The `RealExpr` struct represents a real-valued expression, encoded as an abstract syntax tree. 
-Each `RealExpr` is of some type, for example `Real`, `Reference` or `UnaryOperation`.
+Just like a `SetExpr` encodes a particular set type (for example ball or rectangle), a `RealExpr` encodes a particular expression type. Currently, we support
+* an immediate value of type double (IEEE 754 double-precision floating point)
+* a symbolic variable name (for example "x"), via the *Reference* field
+* an *operation*, acting on:
+** another `RealExpr`, i.e., a `UnaryOperation` (for example, sin, cos, log)
+** two `RealExpr`essions, i.e., a `BinaryOperation` (to express addition, multiplication, min, max, etc.)
+** a list of `RealExpr`, called a `ListOperation` (currently, only addition and multiplication)
 
 ### Naming `RealExpr`essions and `SetExpr`essions and referring back to them
 Additionally, a `RealExpr` can be given a name, which is useful if you define an expression that you want to reuse. For example, say that you define a `RealExpr` as part of the definion of a PQ profile, and you need the same `RealExpr` also in the cost function. In such case, you can give the `RealExpr` a name by setting the `name` field to some string, for example, "a", and then use a `RealExpr` of type *Reference* set to "a" somewhere in the definition of that cost function. Similarly, a `SetExpr` can be given a name, too.
 Note that the name string appears directly in the advertisement, so assigning short names is good practice as it will result in shorter message sizes. 
 
-### Example: Defining a `RealExpr`
+Since the *Reference* field of the `RealExpr` struct type has two uses (
+for defining symbolic variables that act a function arguments and for referring back to a named expression),
+one must be careful not to use the same name (i.e., a string) for a symbolic variable and for (naming) an expression.
+
+### Example: Defining a Real-Valued Function
 For example, to express the function `f: R x R -> R`, `(P,Q) \mapsto P + sin(4*Q)` by hand, we break down the expression as a binary operation (`+`, i.e., addition) between the symbolic variable `P` and the unary operation (`sin`) applied to (the result of) a binary operation (`*`, i.e., multiplication) between the real (immediate) value 4 and the symbolic variable `Q`.
 
 ```C++
