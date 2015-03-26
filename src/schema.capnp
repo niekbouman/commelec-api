@@ -71,7 +71,7 @@ struct RealExpr {
       caseDistinction         @6 :CaseDistinction(RealExpr);
       reference               @7 :Text;
       variable                @8 :Text;
-     }
+    }
 }
 
 struct UnaryOperation {
@@ -154,7 +154,6 @@ struct SetExpr {
       intersection            @5  :List(SetExpr);
       caseDistinction         @6  :CaseDistinction(SetExpr);
       reference               @7  :Text;
-      variable                @8  :Text;
     }
 }
 
