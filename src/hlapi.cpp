@@ -117,7 +117,7 @@ void _BatteryAdvertisement(msg::Advertisement::Builder adv, double Pmin,
 
   // Polynomial Cost Function
   auto cf = adv.getCostFunction();
-  cv::Var Pvar{"P"};
+  cv::PolyVar Pvar{"P"};
   cv::buildPolynomial(cf.initPolynomial(), coeffPcubed * (Pvar ^ 3) +
                                                coeffPsquared * (Pvar ^ 2) +
                                                coeffP * Pvar);
@@ -217,8 +217,8 @@ void _PVAdvertisement(msg::Advertisement::Builder adv, double Srated,
   auto rect = bf.initRectangle(2);
 
   Ref p2("a");
-  Ref P("P");
-  Ref Q("Q");
+  Var P("P");
+  Var Q("Q");
 
   buildRealExpr(rect[0].initBoundA(), P);
   buildRealExpr(rect[0].initBoundB(), name(p2, max(Real(0), P + Real(-Pdelta))));
@@ -227,8 +227,8 @@ void _PVAdvertisement(msg::Advertisement::Builder adv, double Srated,
 
   // Polynomial Cost Function
   auto cf = adv.initCostFunction();
-  Var Pvar("P");
-  Var Qvar("Q");
+  PolyVar Pvar("P");
+  PolyVar Qvar("Q");
   buildPolynomial(cf.initPolynomial(), -a_pv * Pvar + b_pv * (Qvar ^ 2));
 }
 

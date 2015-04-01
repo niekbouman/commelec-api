@@ -97,16 +97,31 @@ struct RealExprBase : public Kind
 };
 
 struct _Ref {
-  // Symbolic variable, for example Ref X("X")
-  _Ref(const std::string &var) : _varname(var) {}
+  // Used to refer to named RealExpr- or SetExpr-essions, for example Ref a("a")
+  _Ref(const std::string &ref) : _refname(ref) {}
+  const std::string &getName() const { return _refname; }
+  void build(msg::RealExpr::Builder realExpr) {
+    realExpr.setReference(_refname);
+  }
+private:
+  std::string _refname;
+};
+
+using Ref = RealExprBase<_Ref, const std::string &>;
+
+struct _Var {
+  // Symbolic variable, for example Var X("X")
+  _Var(const std::string &var) : _varname(var) {}
   const std::string &getName() const { return _varname; }
   void build(msg::RealExpr::Builder realExpr) {
-    realExpr.setReference(_varname);
+    realExpr.setVariable(_varname);
   }
 private:
   std::string _varname;
 };
-using Ref = RealExprBase<_Ref, const std::string &>;
+using Var = RealExprBase<_Var, const std::string &>;
+
+
 
 template <typename Expr>
 struct _Name {
