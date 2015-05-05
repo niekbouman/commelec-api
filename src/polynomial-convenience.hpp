@@ -37,8 +37,8 @@
 //    auto adv = message.initRoot<Advertisement>();
 //    auto cf = adv.getCostFunction();
 //
-//    Var P {"P"};
-//    Var Q {"Q"};
+//    PolyVar P {"P"};
+//    PolyVar Q {"Q"};
 //
 //    BuildPolynomial(cf.initPolynomial(), 4 + 4*P + 5*(P^3|Q^2));
 
@@ -54,9 +54,9 @@
 namespace cv {
 
 
-struct Var {
-  // Symbolic variable, for example Var X{"X"}
-  Var(const std::string &var) : _varname(var) {}
+struct PolyVar {
+  // Symbolic variable, for example PolyVar X{"X"}
+  PolyVar(const std::string &var) : _varname(var) {}
   const std::string &getName() { return _varname; }
 
 private:
@@ -64,14 +64,14 @@ private:
 };
 
 struct Power {
-  // Var raised to some power (for example, X^3)
-  Var var;
+  // PolyVar raised to some power (for example, X^3)
+  PolyVar var;
   int pow;
   // TODO think about this: are negative powers allowed?
 };
 
 struct Monomial {
-  Monomial(Var v) : coeff(1.0) { prodOfPowers.push_back(Power{v, 1}); }
+  Monomial(PolyVar v) : coeff(1.0) { prodOfPowers.push_back(Power{v, 1}); }
   // Constructor to support automatic conversion from "X" -> "X^1"
 
   Monomial(double c = 1.0) : coeff(c) {}
@@ -79,7 +79,7 @@ struct Monomial {
 
   friend Monomial operator|(Monomial monom_a, Monomial monom_b);
   friend Monomial operator*(double c, Monomial m);
-  friend Monomial operator^(Var var, int power);
+  friend Monomial operator^(PolyVar var, int power);
 
   int maxVarDegree() const {
     // compute maxVarDegree from a monomial
@@ -113,7 +113,7 @@ Monomial operator|(Monomial monom_a, Monomial monom_b) {
   return m;
 }
 
-Monomial operator^(Var var, int power) {
+Monomial operator^(PolyVar var, int power) {
   Monomial m;
   m.prodOfPowers.push_back(Power{var, power});
   return m;

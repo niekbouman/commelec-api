@@ -33,6 +33,8 @@
 #include <capnp/serialize-packed.h>
 #include <Eigen/Core>
 
+#include <boost/asio.hpp>
+
 int32_t parseRequest(const uint8_t *inBuffer, int32_t bufSize, double *P,
                      double *Q, uint32_t *senderId) {
   try {
@@ -52,6 +54,38 @@ int32_t parseRequest(const uint8_t *inBuffer, int32_t bufSize, double *P,
     *Q = sp[1];
     return 1;
 
+  } catch (...) {
+    return hlapi_unknown_error;
+  }
+}
+
+void _sendToLocalhost(::capnp::MallocMessageBuilder &builder,
+                      uint16_t destPort) {
+  using boost::asio::ip::udp;
+  boost::asio::io_service io_service;
+  udp::socket s(io_service, udp::endpoint(udp::v4(), 0));
+  s.connect(udp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"),
+                          destPort));
+  auto fd = s.native_handle();
+  writePackedMessageToFd(fd, builder);
+  s.shutdown(boost::asio::ip::udp::socket::shutdown_both);
+  s.close();
+}
+
+int32_t sendBatteryAdvertisement(uint16_t localPort, uint32_t agentId,
+                                 double Pmin, double Pmax, double Srated,
+                                 double coeffP, double coeffPsquared,
+                                 double coeffPcubed, double Pimp, double Qimp) {
+  try {
+    ::capnp::MallocMessageBuilder builder;
+    auto msg = builder.initRoot<msg::Message>();
+    msg.setAgentId(agentId);
+    _BatteryAdvertisement(msg.initAdvertisement(), Pmin, Pmax, Srated, coeffP, coeffPsquared,
+                          coeffPcubed,Pimp,Qimp);
+    _sendToLocalhost(builder,localPort);
+    // write directly into the socket
+    
+    return 0;
   } catch (...) {
     return hlapi_unknown_error;
   }
@@ -112,15 +146,28 @@ void _BatteryAdvertisement(msg::Advertisement::Builder adv, double Pmin,
   // Identity Belief Function
   auto bf = adv.initBeliefFunction();
   auto singleton = bf.initSingleton(2);
-  singleton[0].setReference("P");
-  singleton[1].setReference("Q");
+  singleton[0].setVariable("P");
+  singleton[1].setVariable("Q");
 
   // Polynomial Cost Function
   auto cf = adv.initCostFunction();
-  cv::Var Pvar{"P"};
+  cv::PolyVar Pvar{"P"};
   cv::buildPolynomial(cf.initPolynomial(), coeffPcubed * (Pvar ^ 3) +
                                                coeffPsquared * (Pvar ^ 2) +
                                                coeffP * Pvar);
+}
+
+int32_t sendFuelCellAdvertisement(uint16_t localPort, uint32_t agentId,
+                                  double Pmin, double Pmax, double Srated,
+                                  double coeffP, double coeffPsquared,
+                                  double coeffPcubed, double Pimp,
+                                  double Qimp) {
+  // fuel cell is like battery but cannot consume power
+  if ((Pmin < 0) || (Pmax < 0))
+    return hlapi_illegal_input;
+  return sendBatteryAdvertisement(localPort, agentId, Pmin, Pmax, Srated,
+                                  coeffP, coeffPsquared, coeffPcubed, Pimp,
+                                  Qimp);
 }
 
 int32_t makeFuelCellAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
@@ -135,6 +182,31 @@ int32_t makeFuelCellAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
   return makeBatteryAdvertisement(outBuffer, maxBufSize, packedBytesize,
                                   agentId, Pmin, Pmax, Srated, coeffP,
                                   coeffPsquared, coeffPcubed,Pimp,Qimp);
+}
+
+int32_t sendPVAdvertisement(uint16_t localPort, uint32_t agentId,
+                            double Srated, double Pmax, double Pdelta,
+                            double tanPhi, double a_pv, double b_pv,
+                            double Pimp, double Qimp) {
+  try {
+
+    if (a_pv <= 0.0)
+      return hlapi_illegal_input;
+    if (b_pv <= 0.0)
+      return hlapi_illegal_input;
+    // TODO: should we check here that Pdelta > 0 ?
+
+    ::capnp::MallocMessageBuilder builder;
+    auto msg = builder.initRoot<msg::Message>();
+    msg.setAgentId(agentId);
+    _PVAdvertisement(msg.initAdvertisement(), Srated, Pmax, Pdelta, tanPhi, a_pv, b_pv, Pimp, Qimp);
+    _sendToLocalhost(builder,localPort);
+    // write directly into the socket
+    
+    return 0;
+  } catch (...) {
+    return hlapi_unknown_error;
+  }
 }
 
 int32_t makePVAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
@@ -217,8 +289,8 @@ void _PVAdvertisement(msg::Advertisement::Builder adv, double Srated,
   auto rect = bf.initRectangle(2);
 
   Ref p2("a");
-  Ref P("P");
-  Ref Q("Q");
+  Var P("P");
+  Var Q("Q");
 
   buildRealExpr(rect[0].initBoundA(), P);
   buildRealExpr(rect[0].initBoundB(), name(p2, max(Real(0), P + Real(-Pdelta))));
@@ -227,8 +299,8 @@ void _PVAdvertisement(msg::Advertisement::Builder adv, double Srated,
 
   // Polynomial Cost Function
   auto cf = adv.initCostFunction();
-  Var Pvar("P");
-  Var Qvar("Q");
+  PolyVar Pvar("P");
+  PolyVar Qvar("Q");
   buildPolynomial(cf.initPolynomial(), -a_pv * Pvar + b_pv * (Qvar ^ 2));
 }
 

@@ -34,9 +34,7 @@
 #include "schema.capnp.h"
 #include "polynomial-convenience.hpp"
 
-//#include<iostream> 
 // some macros for repetitive stuff
-
 #define BINOP(name) struct name { \
   void setOp(msg::BinaryOperation::Builder binOp){ \
     binOp.initOperation().set ## name(); \
@@ -97,16 +95,31 @@ struct RealExprBase : public Kind
 };
 
 struct _Ref {
-  // Symbolic variable, for example Ref X("X")
-  _Ref(const std::string &var) : _varname(var) {}
+  // Used to refer to named RealExpr- or SetExpr-essions, for example Ref a("a")
+  _Ref(const std::string &ref) : _refname(ref) {}
+  const std::string &getName() const { return _refname; }
+  void build(msg::RealExpr::Builder realExpr) {
+    realExpr.setReference(_refname);
+  }
+private:
+  std::string _refname;
+};
+
+using Ref = RealExprBase<_Ref, const std::string &>;
+
+struct _Var {
+  // Symbolic variable, for example Var X("X")
+  _Var(const std::string &var) : _varname(var) {}
   const std::string &getName() const { return _varname; }
   void build(msg::RealExpr::Builder realExpr) {
-    realExpr.setReference(_varname);
+    realExpr.setVariable(_varname);
   }
 private:
   std::string _varname;
 };
-using Ref = RealExprBase<_Ref, const std::string &>;
+using Var = RealExprBase<_Var, const std::string &>;
+
+
 
 template <typename Expr>
 struct _Name {
@@ -218,9 +231,9 @@ operator*(RealExprBase<TypeA,CtorArgsA...> a, RealExprBase<TypeB,CtorArgsB...> b
   return BinaryOp<RealExprBase<TypeA,CtorArgsA...>,RealExprBase<TypeB,CtorArgsB...>,Prod>(a, b); 
 } 
 template<typename TypeA,typename TypeB, typename... CtorArgsA, typename... CtorArgsB>
-BinaryOp<RealExprBase<TypeA,CtorArgsA...>, RealExprBase<TypeB,CtorArgsB...>, Sum> 
+BinaryOp<RealExprBase<TypeA,CtorArgsA...>, RealExprBase<TypeB,CtorArgsB...>, Prod> 
 operator/(RealExprBase<TypeA,CtorArgsA...> a, RealExprBase<TypeB,CtorArgsB...> b) { 
-  return BinaryOp<RealExprBase<TypeA,CtorArgsA...>,RealExprBase<TypeB,CtorArgsB...>,Sum>(a, UnaryOp<RealExprBase<TypeB,CtorArgsB...>,MultInv>(b)); 
+  return BinaryOp<RealExprBase<TypeA,CtorArgsA...>,RealExprBase<TypeB,CtorArgsB...>,Prod>(a, UnaryOp<RealExprBase<TypeB,CtorArgsB...>,MultInv>(b)); 
 } 
 
 // toplevel build function
