@@ -57,6 +57,30 @@ int32_t parseRequest(const uint8_t *inBuffer, int32_t bufSize, double *P,
 //   advertisement (P and Q should be discarded)
 //  -1 = parsing failed
 
+
+int32_t sendBatteryAdvertisement(uint16_t localPort, uint32_t agentId,
+                                 double Pmin, double Pmax, double Srated,
+                                 double coeffP, double coeffPsquared,
+                                 double coeffPcubed, double Pimp, double Qimp);
+// Make advertisement for a battery resource agent and send it over UDP to
+// localhost, port 'localPort'
+//
+// return value:
+//     returns 0 if success
+//     returns hlapi_unknown_error if error occurred (see error codes above)
+//
+// agentId: number that uniquely identifies the resource
+//
+// PQ profile:
+//   rated power: Srated
+//   contraints on real power: Pmin, Pmax
+//
+// Belief: the identity belief function
+//
+// Cost: a polynomial cost function, i.e.,
+//     cf(p,q) = coeffPcubed * p^3 + coeffPsquared * p^2 + coeffP * p
+//
+
 int32_t makeBatteryAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
                                  int32_t *packedBytesize, uint32_t agentId,
                                  double Pmin, double Pmax, double Srated,
@@ -91,11 +115,22 @@ int32_t makeBatteryAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
 //     cf(p,q) = coeffPcubed * p^3 + coeffPsquared * p^2 + coeffP * p
 //
 
+int32_t sendFuelCellAdvertisement(uint16_t localPort, uint32_t agentId,
+                                  double Pmin, double Pmax, double Srated,
+                                  double coeffP, double coeffPsquared,
+                                  double coeffPcubed, double Pimp,
+                                  double Qimp);
+
 int32_t makeFuelCellAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
                                   int32_t *packedBytesize, uint32_t agentId,
                                   double Pmin, double Pmax, double Srated,
                                   double coeffP, double coeffPsquared,
                                   double coeffPcubed, double Pimp, double Qimp);
+
+int32_t sendPVAdvertisement(uint16_t localPort, uint32_t agentId,
+                            double Srated, double Pmax, double Pdelta,
+                            double tanPhi, double a_pv, double b_pv,
+                            double Pimp, double Qimp);
 
 int32_t makePVAdvertisement(uint8_t *outBuffer, int32_t maxbufsize,
                             int32_t *packedBytesize, uint32_t deviceId,

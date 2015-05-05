@@ -24,7 +24,9 @@
 #define HIGHLEVEL_API_INT_HPP
 
 #include "schema.capnp.h"
-//#include "schema.capnp.h"
+#include <capnp/message.h>
+
+void _sendToLocalhost(::capnp::MallocMessageBuilder& builder, uint16_t destPort);
 
 void _BatteryAdvertisement(msg::Advertisement::Builder adv, double Pmin, double Pmax, double Srated,
                                  double coeffP, double coeffPsquared,

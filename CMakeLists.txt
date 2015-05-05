@@ -18,4 +18,9 @@ find_package(CapnProto 0.5 REQUIRED)
 include_directories(${CAPNP_INCLUDE_DIRS})
 add_definitions(${CAPNP_DEFINITIONS})
 
+find_package(Boost COMPONENTS system REQUIRED)
+include_directories(${Boost_INCLUDE_DIR})
+link_directories (${Boost_LIBRARY_DIRS})
+
+
 add_subdirectory(src)
