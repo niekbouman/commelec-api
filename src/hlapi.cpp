@@ -66,12 +66,12 @@ int32_t makeBatteryAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
     ::capnp::MallocMessageBuilder builder;
     auto msg = builder.initRoot<msg::Message>();
     msg.setAgentId(agentId);
-    auto adv = msg.getAdvertisement();
+    auto adv = msg.initAdvertisement();
 
     _BatteryAdvertisement(adv, Pmin, Pmax, Srated, coeffP, coeffPsquared,
                           coeffPcubed,Pimp,Qimp);
 
-        auto byteSize = packToByteArray(builder, outBuffer, maxBufSize);
+    auto byteSize = packToByteArray(builder, outBuffer, maxBufSize);
     *packedBytesize = byteSize;
 
     if (byteSize > maxBufSize)
@@ -93,7 +93,7 @@ void _BatteryAdvertisement(msg::Advertisement::Builder adv, double Pmin,
   setpoint.set(1, Qimp);
 
   // PQ Profile: intersection of disk and band
-  auto pqprof = adv.getPQProfile();
+  auto pqprof = adv.initPQProfile();
   auto intsect = pqprof.initIntersection(2);
   auto disk = intsect[0].initBall();
   disk.getRadius().setReal(Srated);
@@ -110,13 +110,13 @@ void _BatteryAdvertisement(msg::Advertisement::Builder adv, double Pmin,
   cv::buildConvexPolytope(A, b, intsect[1].initConvexPolytope());
 
   // Identity Belief Function
-  auto bf = adv.getBeliefFunction();
+  auto bf = adv.initBeliefFunction();
   auto singleton = bf.initSingleton(2);
   singleton[0].setReference("P");
   singleton[1].setReference("Q");
 
   // Polynomial Cost Function
-  auto cf = adv.getCostFunction();
+  auto cf = adv.initCostFunction();
   cv::Var Pvar{"P"};
   cv::buildPolynomial(cf.initPolynomial(), coeffPcubed * (Pvar ^ 3) +
                                                coeffPsquared * (Pvar ^ 2) +
