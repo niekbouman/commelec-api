@@ -1,4 +1,5 @@
-set(HOST arm-linux-gnueabihf)
+set(HOST arm-linux-gnueabi)
+#set(HOST arm-linux-gnueabihf)
 set(CMAKE_SYSTEM_NAME Linux)
 
 set(CMAKE_C_COMPILER "${HOST}-gcc-4.9")
@@ -21,6 +22,11 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(ENV{PKG_CONFIG_LIBDIR} "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig")
 set(ENV{PKG_CONFIG_PATH} "")
 
-set(ADDITIONAL_CXX_FLAGS "-march=armv7-a -mtune=cortex-a9 -mfloat-abi=hard -mfpu=neon")
-set(ADDITIONAL_LINKER_FLAGS "-Wl,--dynamic-linker=/lib/ld-linux.so.3")
+#set(ADDITIONAL_CXX_FLAGS "-march=armv7-a -mtune=cortex-a9 -mfloat-abi=hard -mfpu=neon")
+set(ADDITIONAL_CXX_FLAGS "-march=armv7-a -mtune=cortex-a9 -mfloat-abi=softfp -mfpu=neon")
+#set(ADDITIONAL_CXX_FLAGS "-march=armv7-a -mtune=cortex-a9 -mfloat-abi=soft -mfpu=neon")
+include_directories("/usr/include/${HOST}")
+link_directories("/usr/lib/${HOST}")
+
+#set(ADDITIONAL_LINKER_FLAGS "-Wl,--dynamic-linker=/lib/ld-linux.so.3")
 
