@@ -32,8 +32,7 @@
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <Eigen/Core>
-
-#include <boost/asio.hpp>
+#include <asio.hpp>
 
 int32_t parseRequest(const uint8_t *inBuffer, int32_t bufSize, double *P,
                      double *Q, uint32_t *senderId) {
@@ -61,14 +60,14 @@ int32_t parseRequest(const uint8_t *inBuffer, int32_t bufSize, double *P,
 
 void _sendToLocalhost(::capnp::MallocMessageBuilder &builder,
                       uint16_t destPort) {
-  using boost::asio::ip::udp;
-  boost::asio::io_service io_service;
+  using asio::ip::udp;
+  asio::io_service io_service;
   udp::socket s(io_service, udp::endpoint(udp::v4(), 0));
-  s.connect(udp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"),
+  s.connect(udp::endpoint(asio::ip::address::from_string("127.0.0.1"),
                           destPort));
   auto fd = s.native_handle();
   writePackedMessageToFd(fd, builder);
-  s.shutdown(boost::asio::ip::udp::socket::shutdown_both);
+  s.shutdown(asio::ip::udp::socket::shutdown_both);
   s.close();
 }
 
