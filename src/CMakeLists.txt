@@ -5,10 +5,14 @@ set(hlapi_sources
   serialization.cpp
 )
 
+if(CMAKE_SYSTEM_NAME STREQUAL Windows)
+  set(EXTRA_LIBS ws2_32)
+endif()
+
 set(CAPNPC_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 capnp_generate_cpp(CAPNP_SRCS CAPNP_HDRS schema.capnp)
 add_library(hlapi SHARED ${hlapi_sources} ${CAPNP_SRCS})
 add_library(hlapi_static ${hlapi_sources} ${CAPNP_SRCS})
-target_link_libraries(hlapi ${CAPNP_LIBRARIES_LITE} ${Boost_LIBRARIES})
-target_link_libraries(hlapi_static ${CAPNP_LIBRARIES_LITE} ${Boost_LIBRARIES})
+target_link_libraries(hlapi ${CAPNP_LIBRARIES_LITE} ${EXTRA_LIBS})
+target_link_libraries(hlapi_static ${CAPNP_LIBRARIES_LITE} ${EXTRA_LIBS})
 
