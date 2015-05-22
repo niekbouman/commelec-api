@@ -9,6 +9,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL Windows)
   set(EXTRA_LIBS ws2_32)
 endif()
 
+set_source_files_properties(${CAPNP_SRCS} PROPERTIES GENERATED TRUE)
 set(CAPNPC_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 capnp_generate_cpp(CAPNP_SRCS CAPNP_HDRS schema.capnp)
 add_library(hlapi SHARED ${hlapi_sources} ${CAPNP_SRCS})
