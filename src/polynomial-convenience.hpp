@@ -104,7 +104,7 @@ private:
   std::vector<Power> prodOfPowers;
 };
 
-Monomial operator|(Monomial monom_a, Monomial monom_b) {
+inline Monomial operator|(Monomial monom_a, Monomial monom_b) {
   // operator for concatenating powers, for example (X^3|Y^4)  (parentheses are
   // necessary)
   Monomial m(monom_a);
@@ -113,13 +113,13 @@ Monomial operator|(Monomial monom_a, Monomial monom_b) {
   return m;
 }
 
-Monomial operator^(PolyVar var, int power) {
+inline Monomial operator^(PolyVar var, int power) {
   Monomial m;
   m.prodOfPowers.push_back(Power{var, power});
   return m;
 }
 
-Monomial
+inline Monomial
 operator*(double c, Monomial m) {
   m.coeff *= c;
   return m;
@@ -156,19 +156,19 @@ private:
   std::vector<Monomial> m;
 };
 
-MonomialSum operator+(Monomial a, Monomial b) {
+inline MonomialSum operator+(Monomial a, Monomial b) {
   MonomialSum s;
   s.m.push_back(a);
   s.m.push_back(b);
   return s;
 }
 
-MonomialSum operator+(MonomialSum s, Monomial a) {
+inline MonomialSum operator+(MonomialSum s, Monomial a) {
   s.m.push_back(a);
   return s;
 }
 
-void buildPolynomial(msg::Polynomial::Builder poly,MonomialSum m) {
+inline void buildPolynomial(msg::Polynomial::Builder poly,MonomialSum m) {
   // initialize polynomial in capnp message based on
   // a MonomialSum expression (which is easy to enter by hand and type-safe)
 
