@@ -1,5 +1,8 @@
 # commelec-api
 
+## Table of Contents
+[Build instructions](docs/building.md)
+
 ## Message format specification and API for the Commelec Smart-Grid-control platform.
 
 *Commelec* is distributed real-time a control framework for modern electrical grids. By a "modern grid", we mean a grid involving volatile and weather-dependent sources, like wind turbines and photo-voltaic (PV) panels, loads such as heat pumps, and storage elements, like batteries, supercapacitors, or an electrolyser combined with a fuel cell.
