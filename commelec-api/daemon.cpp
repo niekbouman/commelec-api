@@ -268,7 +268,7 @@ void generateDefaultConfiguration(const char *configFile){
 }
 
 
-int commandLineParser(int argc, char *argv[], std::string configFile, ResourceMap& resources) {
+int commandLineParser(int argc, char *argv[], std::string& configFile, ResourceMap& resources) {
   // This function handles command line arguments:
   //   * no command line arguments
   //   * '--generate' option
@@ -341,14 +341,14 @@ int main(int argc, char *argv[]) {
   boost::asio::io_service io_service;
   // needed for ASIO's eventloop
 
-  auto configFile = "daemon-cfg.json";
+  auto configFile = std::string("daemon-cfg.json");
   auto status = commandLineParser(argc, argv, configFile, resources);
   // possibly updates 'configFile' filename
 
   rapidjson::Document cfg;
   switch (status) {
   case 0:
-    cfg = readJSONfile(configFile);
+    cfg = readJSONfile(configFile.c_str());
     break;
   case 1:
     cfg = readJSONstdin();
