@@ -23,23 +23,11 @@ We will refer to the automatically generated API as the *low-level API*.
 
 We use the term *high-level API* (and the abbreviation *hlapi*) for a collection of functions (each with a C function prototype) for constructing advertisements for various commonly used resources. Each such function is tailored to a specific resource. Currently, we provide functions for constructing advertisements for a battery, a fuel cell, and a PV, as well a function to parse a request (the latter is independent of the resource). 
 
-Also, the high-level API demonstrates the use of the low-level API. Hence, when you want to write a function for constructing an advertisement for a resource that is not supported in the high-level API, the implementation code of the high-level API could serve as an example and/or as a starting point for your custom function.
+By means of a small server program, a *daemon*, we make the above functions accessible via a simple interface that is based on sending JSON objects over a UDP socket. This makes it easy to use our high-level API without having to link to our library (one only has to compile the daemon).
+
+The implementation of the high-level API demonstrates the use of the low-level API. Hence, when you want to write a function for constructing an advertisement for a resource that is not supported in the high-level API, the implementation code of the high-level API could serve as an example and/or as a starting point for your custom function.
 
 We have written (in C++11) some convenience functions for easily constructing certain mathematical objects that we define in the schema, like polynomials or (convex) polytopes. Note that we view those convenience functions as part of the low-level API.
-
-## Library and Compiler Dependencies
-The C++ API code depends on the following libraries:
-* [Cap'n Proto](https://capnproto.org), >= 0.5.0
-* [Eigen3](http://eigen.tuxfamily.org/), >= 3.0.0 (a header-only library)
-
-The C++ API uses [C++11](http://en.wikipedia.org/wiki/C++11), hence needs a newer compiler (e.g., one of those listed below):
-* GNU C/C++ compiler >= 4.8 (Linux)
-* Clang >= 3.3 (MacOS, FreeBSD)
-* Visual C++ >= 2015 (Windows)
-* MinGW-w64 >= 3 (for cross-compiling to Windows)
-
-## Pre-Compiled Builds of the High-Level API
-We currently provide [precompiled builds](http://smartgrid.epfl.ch/?q=node/14) for Windows (x86, 32 bit) and ARM.
 
 ## Usage Example of the High-Level API
 Let us demonstrate how to parse a request.
@@ -48,7 +36,7 @@ Let us demonstrate how to parse a request.
 // parsing a Request
 
 #include <iostream>
-#include <commelec-api/src/hlapi.h>
+#include <commelec-api/hlapi.h>
 
 constexpr int32_t sz = 1024;
 uint8_t buffer[sz];
