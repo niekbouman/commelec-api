@@ -32,7 +32,7 @@
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <Eigen/Core>
-#include <asio.hpp>
+#include <boost/asio.hpp>
 
 int32_t parseRequest(const uint8_t *inBuffer, int32_t bufSize, double *P,
                      double *Q, uint32_t *senderId) {
@@ -58,16 +58,17 @@ int32_t parseRequest(const uint8_t *inBuffer, int32_t bufSize, double *P,
   }
 }
 
+/*
 void _sendToLocalhost(::capnp::MallocMessageBuilder &builder,
                       uint16_t destPort) {
-  using asio::ip::udp;
-  asio::io_service io_service;
+  using boost::asio::ip::udp;
+  boost::asio::io_service io_service;
   udp::socket s(io_service, udp::endpoint(udp::v4(), 0));
-  s.connect(udp::endpoint(asio::ip::address::from_string("127.0.0.1"),
+  s.connect(udp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"),
                           destPort));
   auto fd = s.native_handle();
   writePackedMessageToFd(fd, builder);
-  s.shutdown(asio::ip::udp::socket::shutdown_both);
+  s.shutdown(boost::asio::ip::udp::socket::shutdown_both);
   s.close();
 }
 
@@ -89,6 +90,7 @@ int32_t sendBatteryAdvertisement(uint16_t localPort, uint32_t agentId,
     return hlapi_unknown_error;
   }
 }
+*/
 
 int32_t makeBatteryAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
                                  int32_t *packedBytesize, uint32_t agentId,
@@ -156,6 +158,7 @@ void _BatteryAdvertisement(msg::Advertisement::Builder adv, double Pmin,
                                                coeffP * Pvar);
 }
 
+/*
 int32_t sendFuelCellAdvertisement(uint16_t localPort, uint32_t agentId,
                                   double Pmin, double Pmax, double Srated,
                                   double coeffP, double coeffPsquared,
@@ -168,6 +171,7 @@ int32_t sendFuelCellAdvertisement(uint16_t localPort, uint32_t agentId,
                                   coeffP, coeffPsquared, coeffPcubed, Pimp,
                                   Qimp);
 }
+*/
 
 int32_t makeFuelCellAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
                                   int32_t *packedBytesize, uint32_t agentId,
@@ -183,6 +187,7 @@ int32_t makeFuelCellAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
                                   coeffPsquared, coeffPcubed,Pimp,Qimp);
 }
 
+/*
 int32_t sendPVAdvertisement(uint16_t localPort, uint32_t agentId,
                             double Srated, double Pmax, double Pdelta,
                             double tanPhi, double a_pv, double b_pv,
@@ -207,6 +212,7 @@ int32_t sendPVAdvertisement(uint16_t localPort, uint32_t agentId,
     return hlapi_unknown_error;
   }
 }
+*/
 
 int32_t makePVAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
                             int32_t *packedBytesize, uint32_t agentId,
