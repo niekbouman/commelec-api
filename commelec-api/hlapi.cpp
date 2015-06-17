@@ -20,15 +20,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 // 
-#include "hlapi.h"
-#include "hlapi-internal.hpp"
-#include "schema.capnp.h"
-#include "serialization.hpp"
-#include "polytope-convenience.hpp"
-#include "polynomial-convenience.hpp"
-#include "realexpr-convenience.hpp"
+#include <commelec-api/hlapi.h>
+#include <commelec-api/hlapi-internal.hpp>
+#include <commelec-api/schema.capnp.h>
+#include <commelec-api/serialization.hpp>
+#include <commelec-api/polytope-convenience.hpp>
+#include <commelec-api/polynomial-convenience.hpp>
+#include <commelec-api/realexpr-convenience.hpp>
 
 #include <cstring>
+#include <vector>
+#include <limits>
+#include <algorithm>
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <Eigen/Core>
@@ -309,3 +312,62 @@ void _PVAdvertisement(msg::Advertisement::Builder adv, double Srated,
   buildPolynomial(cf.initPolynomial(), -a_pv * Pvar + b_pv * (Qvar ^ 2));
 }
 
+void _realDiscreteDevice(msg::Advertisement::Builder adv, 
+      double Pmin, double Pmax, // active power bounds
+      double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
+      double Pimp, double Qimp) // implemented setpoint
+
+{
+  using namespace cv;
+
+  auto setpoint = adv.initImplementedSetpoint(2);
+  setpoint.set(0, Pimp);
+  setpoint.set(1, 0.0);
+
+  // PQ profile: rectangle
+  auto rectangularPQprof = adv.initPQProfile().initRectangle(2);
+  rectangularPQprof[0].initBoundA().setReal(Pmin);
+  rectangularPQprof[0].initBoundB().setReal(Pmax);
+  rectangularPQprof[1].initBoundA().setReal(0.0);
+  rectangularPQprof[1].initBoundB().setReal(0.0);
+
+
+  // build projection function
+  std::vector<double> points;
+  std::sort(points.begin(), points.end());
+
+  auto sz = points.size();
+
+  auto bf = adv.initBeliefFunction();
+
+  auto cases = bf.initCaseDistinction();
+  cases.initVariables(1).set(0,"P");
+
+  cases.initCases(sz);
+
+  //points.
+  
+  
+  auto inf = std::numeric_limits<double>::infinity();
+
+  if (sz>1)
+  for (auto i=0 ; i< sz-1 ; ++i)
+  {
+    auto boundary  = (points[i] + points[i+1]) / 2.0;
+
+    addcase(points[i], -inf, boundary);
+
+  }
+
+
+
+  // Polynomial Cost Function
+  auto cf = adv.initCostFunction();
+  PolyVar Pvar("P");
+  buildPolynomial(cf.initPolynomial(), alpha * (Pvar ^ 2) + beta * Pvar);
+
+}
+
+void addCase(double value, double leftIntvalBoundary, double rightIntvalBoundary)
+{
+}

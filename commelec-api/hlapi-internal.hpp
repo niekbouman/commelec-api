@@ -23,7 +23,7 @@
 #ifndef HIGHLEVEL_API_INT_HPP
 #define HIGHLEVEL_API_INT_HPP
 
-#include "schema.capnp.h"
+#include <commelec-api/schema.capnp.h> 
 #include <capnp/message.h>
 
 //void _sendToLocalhost(::capnp::MallocMessageBuilder& builder, uint16_t destPort);
