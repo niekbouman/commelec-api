@@ -23,9 +23,12 @@
 #ifndef HIGHLEVEL_API_INT_HPP
 #define HIGHLEVEL_API_INT_HPP
 
+// This header file exposes functions that do not have a C interface (but a C++ one instead)
+// (The hlapi.h header exposes functions as extern "C")
+
 #include <commelec-api/schema.capnp.h> 
 #include <capnp/message.h>
-
+#include <vector>
 //void _sendToLocalhost(::capnp::MallocMessageBuilder& builder, uint16_t destPort);
 
 void _BatteryAdvertisement(msg::Advertisement::Builder adv, double Pmin, double Pmax, double Srated,
@@ -34,5 +37,13 @@ void _BatteryAdvertisement(msg::Advertisement::Builder adv, double Pmin, double 
 
 void _PVAdvertisement(msg::Advertisement::Builder adv, double Srated, double Pmax, double Pdelta,
                             double tanPhi, double a_pv, double b_pv, double Pimp, double Qimp);
+
+void
+_realDiscreteDevice(msg::Advertisement::Builder adv, 
+                    double Pmin,double Pmax, // active power bounds
+                    std::vector<double>& discretizationPoints,
+                    double accumulatedError, //  
+                    double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
+                    double Pimp);
 #endif
 
