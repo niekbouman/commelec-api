@@ -321,8 +321,46 @@ void addCase(msg::ExprCase<msg::RealExpr>::Builder caseItem, double value,
   caseItem.initExpression().setReal(value);
 }
 
+
+
+
 void
-_realDiscreteDevice(msg::Advertisement::Builder adv, 
+_realDiscreteDeviceAdvertisement(msg::Advertisement::Builder adv, 
+                    double Pmin,double Pmax, // active power bounds
+                    std::vector<double>& points, // the functions modifies (sorts) the vector 
+                    double error, 
+                    double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
+                    double Pimp) // implemented setpoint
+
+{
+}
+
+void _uniformRealDiscreteDeviceAdvertisement(msg::Advertisement::Builder adv, 
+                    double Pmin,double Pmax, // active power bounds
+                    int numPoints, double minPoint, double stepSize,
+                    double accumulatedError, //  
+                    double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
+                    double Pimp)
+{}
+
+
+
+class UniformBelief {
+
+public:
+  UniformBelief()   {}
+
+  void makeBelief(msg::SetExpr::Reader bf);
+};
+
+template<class BeliefPolicy>
+class DiscreteDevice : public BeliefPolicy {
+    using BeliefPolicy::makeBelief;
+    void makeAdvertisement(msg::Advertisement::Builder adv)
+};
+
+void
+_realDiscreteDeviceAdvertisement(msg::Advertisement::Builder adv, bool uniform,
                     double Pmin,double Pmax, // active power bounds
                     std::vector<double>& points, // the functions modifies (sorts) the vector 
                     double error, 

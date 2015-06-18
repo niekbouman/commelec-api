@@ -45,5 +45,14 @@ _realDiscreteDevice(msg::Advertisement::Builder adv,
                     double accumulatedError, //  
                     double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
                     double Pimp);
+void
+
+_uniformRealDiscreteDevice(msg::Advertisement::Builder adv, 
+                    double Pmin,double Pmax, // active power bounds
+                    int numPoints, double minPoint, double stepSize,
+                    double accumulatedError, //  
+                    double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
+                    double Pimp);
+
 #endif
 
