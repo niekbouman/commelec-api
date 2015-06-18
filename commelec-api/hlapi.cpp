@@ -324,41 +324,127 @@ void addCase(msg::ExprCase<msg::RealExpr>::Builder caseItem, double value,
 
 
 
-void
-_realDiscreteDeviceAdvertisement(msg::Advertisement::Builder adv, 
-                    double Pmin,double Pmax, // active power bounds
-                    std::vector<double>& points, // the functions modifies (sorts) the vector 
-                    double error, 
-                    double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
-                    double Pimp) // implemented setpoint
 
-{
-}
+class RoundBelief {
+public:
+  void makeBelief(msg::SetExpr::Builder bf, double stepSize, double error)
+  {
+      using namespace cv;
+      auto roundBelief = bf.initSingleton(2);
+      Var P("P");
+      Real step(stepSize);
+      buildRealExpr(roundBelief[0], step * round(P/step));
+      roundBelief[1].setVariable("Q"); // and directly forward Q
+  }
+};
 
-void _uniformRealDiscreteDeviceAdvertisement(msg::Advertisement::Builder adv, 
-                    double Pmin,double Pmax, // active power bounds
-                    int numPoints, double minPoint, double stepSize,
-                    double accumulatedError, //  
-                    double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
-                    double Pimp)
-{}
+class ProjBelief {
+public:
+  void makeBelief(
+      msg::SetExpr::Builder bf,
+      std::vector<double> &points, // the functions modifies (sorts) the vector
+      double error) {
+    // build belief function: (P,Q) -> {(proj_S(P - error), Q)}
+    // where the set S is here encoded as a vector<double> (named 'points')
+    std::sort(points.begin(), points.end());
+    auto sz = points.size();
 
+    if (sz == 0)
+      throw std::runtime_error(
+          "List of implementable setpoints is empty, which is not allowed.");
+    auto projBelief = bf.initSingleton(2);
+    auto projFunction = projBelief[0].initCaseDistinction();
+    projFunction.initVariables(1)
+        .set(0, "P");               // we make a case distinction on P
+    projBelief[1].setVariable("Q"); // and directly forward Q
+    auto caseItems = projFunction.initCases(sz);
+    auto inf = std::numeric_limits<double>::infinity();
 
+    // For a given set of discretization points S = {P_1, P_2, ..., P_n},
+    // the interpreter should round an input P to the nearest point in S.
+    // We will implement this such that the interpreter first checks whether
+    // P lies in [-inf, (P_1 + P_2)/2 ],
+    // then whether P lies is  [-inf, (P_2 + P_3)/2 ],
+    // etc., and finally, whether P lies in [-inf,inf] (which always holds)
+    //
+    // Hence, the intervals do not form a partition but are overlapping,
+    // but this is not a problem as the order of evaluation by the interpreter
+    // is
+    // fixed by the list ordering of the cases in the case distinction.
+    for (auto i = 0; i < sz - 1; ++i) {
+      auto boundary = (points[i] + points[i + 1]) / 2.0;
+      addCase(caseItems[i], points[i], -inf + error, boundary + error);
+      // instead of subtracting the error from P, we shift the boundaries of the
+      // intervals by the error
+    }
+    addCase(caseItems[sz - 1], points[sz - 1], -inf, inf);
+  }
+};
 
-class UniformBelief {
+class ImplSetpoint {
+  public:
+  void setImplSetpoint(msg::Advertisement::Builder adv, double Pimp, double Qimp){
+    auto setpoint = adv.initImplementedSetpoint(2);
+    setpoint.set(0, Pimp);
+    setpoint.set(1, Qimp);
+  }
+};
+
+template <class BeliefPolicy>
+class DiscreteDevice : public ImplSetpoint, public BeliefPolicy {
+  using BeliefPolicy::makeBelief;
+  using ImplSetpoint::setImplSetpoint;
 
 public:
-  UniformBelief()   {}
+  template <typename... Parameters>
+  void
+  makeAdvertisement(msg::Advertisement::Builder adv, double Pmin, double Pmax,
+                    double alpha,
+                    double beta, // cost function: f(P,Q) = alpha P^2 + beta P
+                    double Pimp, Parameters... params) {
 
-  void makeBelief(msg::SetExpr::Reader bf);
+    // PQ profile: rectangle
+    auto rectangularPQprof = adv.initPQProfile().initRectangle(2);
+    rectangularPQprof[0].initBoundA().setReal(Pmin);
+    rectangularPQprof[0].initBoundB().setReal(Pmax);
+    rectangularPQprof[1].initBoundA().setReal(0.0);
+    rectangularPQprof[1].initBoundB().setReal(0.0);
+
+    makeBelief(adv.initBeliefFunction(), params...);
+
+    // Polynomial Cost Function
+    auto cf = adv.initCostFunction();
+    cv::PolyVar Pvar("P");
+    cv::buildPolynomial(cf.initPolynomial(), alpha * (Pvar ^ 2) + beta * Pvar);
+
+    setImplSetpoint(adv, Pimp, 0.0);
+  }
 };
 
-template<class BeliefPolicy>
-class DiscreteDevice : public BeliefPolicy {
-    using BeliefPolicy::makeBelief;
-    void makeAdvertisement(msg::Advertisement::Builder adv)
-};
+void _realDiscreteDeviceAdvertisement(
+    msg::Advertisement::Builder adv, double Pmin,
+    double Pmax,                 // active power bounds
+    std::vector<double> &points, // the functions modifies (sorts) the vector
+    double error, double alpha,
+    double beta, // cost function: f(P,Q) = alpha P^2 + beta P
+    double Pimp) // implemented setpoint
+{
+  DiscreteDevice<ProjBelief>{}.makeAdvertisement(adv, Pmin, Pmax, alpha, beta,
+                                                 Pimp, points, error);
+}
 
+void _uniformRealDiscreteDeviceAdvertisement(
+    msg::Advertisement::Builder adv, double Pmin,
+    double Pmax, // active power bounds
+    double stepSize,
+    double accumulatedError,   //
+    double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
+    double Pimp) {
+  DiscreteDevice<RoundBelief>{}.makeAdvertisement(
+      adv, Pmin, Pmax, alpha, beta, Pimp, stepSize, accumulatedError);
+}
+
+/*
 void
 _realDiscreteDeviceAdvertisement(msg::Advertisement::Builder adv, bool uniform,
                     double Pmin,double Pmax, // active power bounds
@@ -417,4 +503,4 @@ _realDiscreteDeviceAdvertisement(msg::Advertisement::Builder adv, bool uniform,
   cv::PolyVar Pvar("P");
   cv::buildPolynomial(cf.initPolynomial(), alpha * (Pvar ^ 2) + beta * Pvar);
 }
-
+*/
