@@ -39,7 +39,7 @@ void _PVAdvertisement(msg::Advertisement::Builder adv, double Srated, double Pma
                             double tanPhi, double a_pv, double b_pv, double Pimp, double Qimp);
 
 void
-_realDiscreteDevice(msg::Advertisement::Builder adv, 
+_realDiscreteDeviceAdvertisement(msg::Advertisement::Builder adv, 
                     double Pmin,double Pmax, // active power bounds
                     std::vector<double>& discretizationPoints,
                     double accumulatedError, //  
@@ -47,7 +47,7 @@ _realDiscreteDevice(msg::Advertisement::Builder adv,
                     double Pimp);
 void
 
-_uniformRealDiscreteDevice(msg::Advertisement::Builder adv, 
+_uniformRealDiscreteDeviceAdvertisement(msg::Advertisement::Builder adv, 
                     double Pmin,double Pmax, // active power bounds
                     int numPoints, double minPoint, double stepSize,
                     double accumulatedError, //  

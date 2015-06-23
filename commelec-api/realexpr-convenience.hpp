@@ -36,27 +36,27 @@
 
 // some macros for repetitive stuff
 #define BINOP(name) struct name { \
-  void setOp(msg::BinaryOperation::Builder binOp){ \
+  void setOp(msg::BinaryOperation::Builder binOp) const { \
     binOp.initOperation().set ## name(); \
   } \
 };
 
 #define UNOP(name) struct name { \
-  void setOp(msg::UnaryOperation::Builder unaryOp){ \
+  void setOp(msg::UnaryOperation::Builder unaryOp) const { \
     unaryOp.initOperation().set ## name(); \
   } \
 };
 
 #define UNOPFUN(name,type) template<typename TypeA> \
-UnaryOp<TypeA,type> name(TypeA a) \
+Expr<UnaryOp<Expr<TypeA>,type>> name(Expr<TypeA> a) \
 { \
-  return UnaryOp<TypeA,type>(a); \
+  return Expr<UnaryOp<Expr<TypeA>,type>>(a); \
 }
 
 #define BINOPFUN(name,type) template<typename TypeA, typename TypeB> \
-BinaryOp<TypeA,TypeB,type> name(TypeA a, TypeB b) \
+Expr<BinaryOp<Expr<TypeA>,Expr<TypeB>,type>> name(Expr<TypeA> a, Expr<TypeB> b) \
 { \
-  return BinaryOp<TypeA,TypeB,type>(a,b); \
+  return Expr<BinaryOp<Expr<TypeA>,Expr<TypeB>,type>>(a,b); \
 }
 
 namespace cv {
@@ -86,115 +86,116 @@ BINOP(Max)
 BINOP(LessEqThan)
 BINOP(GreaterThan)
 
-// Every expression is a RealExprBase
-template<typename Kind,typename... CtorArgs>
-struct RealExprBase : public Kind 
-{
-  RealExprBase(CtorArgs... args)
-  : Kind(args...) {}
-};
+// define +,-,*,/ operators that bind only to RealExprBase expressions
 
-struct _Ref {
+template <typename T> class Expr {};
+
+
+
+class _Ref {};
+template <> class Expr<_Ref> {
   // Used to refer to named RealExpr- or SetExpr-essions, for example Ref a("a")
-  _Ref(const std::string &ref) : _refname(ref) {}
+  const std::string &_refname;
+
+public:
+  Expr(const std::string &ref) : _refname(ref) {}
   const std::string &getName() const { return _refname; }
-  void build(msg::RealExpr::Builder realExpr) {
+  void build(msg::RealExpr::Builder realExpr) const {
     realExpr.setReference(_refname);
   }
-private:
-  std::string _refname;
 };
 
-using Ref = RealExprBase<_Ref, const std::string &>;
+using Ref = Expr<_Ref>;
 
-struct _Var {
+class _Var {};
+template <> class Expr<_Var> {
   // Symbolic variable, for example Var X("X")
-  _Var(const std::string &var) : _varname(var) {}
+  const std::string &_varname;
+
+public:
+  Expr(const std::string &var) : _varname(var) {}
   const std::string &getName() const { return _varname; }
-  void build(msg::RealExpr::Builder realExpr) {
+  void build(msg::RealExpr::Builder realExpr) const  {
     realExpr.setVariable(_varname);
   }
-private:
-  std::string _varname;
 };
-using Var = RealExprBase<_Var, const std::string &>;
 
+using Var = Expr<_Var>;
 
-
-template <typename Expr>
-struct _Name {
+template <typename T> class _Name {};
+template <typename T> class Expr<_Name<Expr<T>>> {
   // can be used to name a (sub-) expression
-  _Name(const Ref &ref , Expr ex) : _name(ref.getName()), _expr(ex) {}
-  void build(msg::RealExpr::Builder realExpr) {
+  const Expr<T> &_expr;
+  const std::string &_name;
+
+public:
+  Expr(const Ref &ref, Expr<T> ex) : _name(ref.getName()), _expr(ex) {}
+  void build(msg::RealExpr::Builder realExpr) const  {
     realExpr.setName(_name);
     _expr.build(realExpr);
   }
-private:
-  Expr _expr;
-  std::string _name;
 };
 
-template <typename Expr>
-using Name = RealExprBase<_Name<Expr>,const Ref&, Expr>;
-
-template<typename Expr>
-Name<Expr> name(const Ref& ref, Expr ex)
-{
-  return Name<Expr>(ref,ex);
+template <typename T>
+Expr<_Name<Expr<T>>> name(const Ref &ref, const Expr<T> &ex) {
+  return Expr<_Name<Expr<T>>>(ref, ex);
 }
 
-struct _Real {
-  _Real(double val): _value(val){}
-  void setValue(double val)  {
-    _value=val;
-  }
-  void build(msg::RealExpr::Builder realExpr) {
-    realExpr.setReal(_value);
-  }
-private:
-  double _value=0.0;
-};
-using Real = RealExprBase<_Real,double>;
+class _Real {};
+template <> class Expr<_Real> {
+  double _value = 0.0;
 
-struct _Polynomial {
-  _Polynomial(MonomialSum m) : _expr(m) {}
-  void build(msg::RealExpr::Builder realExpr) {
-    buildPolynomial(realExpr.getPolynomial(),_expr);
-  }
-private:
-  MonomialSum _expr;
+public:
+  Expr(double val) : _value(val) {}
+  void setValue(double val) { _value = val; }
+  void build(msg::RealExpr::Builder realExpr) const  { realExpr.setReal(_value); }
 };
-using Polynomial = RealExprBase<_Polynomial, MonomialSum>;
 
-template <typename TypeA, typename Operation> 
-struct _UnaryOp : public Operation {
-  _UnaryOp(TypeA a) : argA(a) {}
-  void build(msg::RealExpr::Builder realExpr) {
+using Real = Expr<_Real>;
+
+class _Polynomial {};
+template <> class Expr<_Polynomial> {
+  const MonomialSum& _expr;
+
+public:
+  Expr(const MonomialSum& m) : _expr(m) {}
+  void build(msg::RealExpr::Builder realExpr) const  {
+    buildPolynomial(realExpr.getPolynomial(), _expr);
+  }
+};
+
+using Polynomial = Expr<_Polynomial>;
+
+template <typename TypeA, typename Operation> class UnaryOp {};
+template <typename T, typename Operation>
+class Expr<UnaryOp<Expr<T>, Operation>> : public Operation {
+  const Expr<T> &arg;
+
+public:
+  Expr(const Expr<T> &a) : arg(a) {}
+  void build(msg::RealExpr::Builder realExpr) const  {
     auto unaryop = realExpr.initUnaryOperation();
-    Operation::setOp(unaryop);    
-    argA.build(unaryop.initArg());
+    Operation::setOp(unaryop);
+    arg.build(unaryop.initArg());
   }
-private:
-  TypeA argA;
 };
-template <typename Type, typename Operation>
-using UnaryOp = RealExprBase<_UnaryOp<Type,Operation>,Type>;
 
-template <typename TypeA, typename TypeB, typename Operation>
-struct _BinaryOp : public Operation {
-  _BinaryOp(TypeA a, TypeB b) : argA(a), argB(b) {}
-  void build(msg::RealExpr::Builder realExpr) {
+// template specialization
+template <typename TypeA, typename TypeB, typename Operation> class BinaryOp {};
+template <typename T1, typename T2, typename Operation>
+class Expr<BinaryOp<Expr<T1>, Expr<T2>, Operation>> : public Operation {
+  const Expr<T1> &argA;
+  const Expr<T2> &argB;
+
+public:
+  Expr(const Expr<T1> &a, const Expr<T2> &b) : argA(a), argB(b) {}
+  void build(msg::RealExpr::Builder realExpr) const  {
     auto binop = realExpr.initBinaryOperation();
-    Operation::setOp(binop);  
+    Operation::setOp(binop);
     argA.build(binop.initArgA());
     argB.build(binop.initArgB());
   }
-private:
-  TypeA argA;
-  TypeB argB;
 };
-template <typename TypeA, typename TypeB, typename Operation>
-using BinaryOp = RealExprBase<_BinaryOp<TypeA,TypeB,Operation>,TypeA,TypeB>;
 
 // instantiate convenience functions for using the unary operation classes 
 UNOPFUN(exp,Exp)
@@ -215,31 +216,32 @@ BINOPFUN(max,Max)
 BINOPFUN(min,Min)
 BINOPFUN(pow,Pow)
 
-// define +,-,*,/ operators that bind only to RealExprBase expressions
-template<typename TypeA,typename TypeB, typename... CtorArgsA, typename... CtorArgsB>
-BinaryOp<RealExprBase<TypeA,CtorArgsA...>, RealExprBase<TypeB,CtorArgsB...>, Sum> 
-operator+(RealExprBase<TypeA,CtorArgsA...> a, RealExprBase<TypeB,CtorArgsB...> b) { 
-  return BinaryOp<RealExprBase<TypeA,CtorArgsA...>,RealExprBase<TypeB,CtorArgsB...>,Sum>(a, b); 
-} 
-template<typename TypeA,typename TypeB, typename... CtorArgsA, typename... CtorArgsB>
-BinaryOp<RealExprBase<TypeA,CtorArgsA...>, RealExprBase<TypeB,CtorArgsB...>, Sum> 
-operator-(RealExprBase<TypeA,CtorArgsA...> a, RealExprBase<TypeB,CtorArgsB...> b) { 
-  return BinaryOp<RealExprBase<TypeA,CtorArgsA...>,RealExprBase<TypeB,CtorArgsB...>,Sum>(a, UnaryOp<RealExprBase<TypeB,CtorArgsB...>,Negate>(b)); 
-} 
-template<typename TypeA,typename TypeB, typename... CtorArgsA, typename... CtorArgsB>
-BinaryOp<RealExprBase<TypeA,CtorArgsA...>, RealExprBase<TypeB,CtorArgsB...>, Prod> 
-operator*(RealExprBase<TypeA,CtorArgsA...> a, RealExprBase<TypeB,CtorArgsB...> b) { 
-  return BinaryOp<RealExprBase<TypeA,CtorArgsA...>,RealExprBase<TypeB,CtorArgsB...>,Prod>(a, b); 
-} 
-template<typename TypeA,typename TypeB, typename... CtorArgsA, typename... CtorArgsB>
-BinaryOp<RealExprBase<TypeA,CtorArgsA...>, RealExprBase<TypeB,CtorArgsB...>, Prod> 
-operator/(RealExprBase<TypeA,CtorArgsA...> a, RealExprBase<TypeB,CtorArgsB...> b) { 
-  return BinaryOp<RealExprBase<TypeA,CtorArgsA...>,RealExprBase<TypeB,CtorArgsB...>,Prod>(a, UnaryOp<RealExprBase<TypeB,CtorArgsB...>,MultInv>(b)); 
-} 
+
+// binary operators
+template<typename TypeA,typename TypeB>
+Expr<BinaryOp<Expr<TypeA>,Expr<TypeB>,Sum>>
+operator+(Expr<TypeA> a, Expr<TypeB> b) { 
+  return Expr<BinaryOp<Expr<TypeA>,Expr<TypeB>,Sum>>(a,b);
+}
+template<typename TypeA,typename TypeB>
+Expr<BinaryOp<Expr<TypeA>,Expr<UnaryOp<Expr<TypeB>,Negate>>,Sum>>
+operator-(Expr<TypeA> a, Expr<TypeB> b) { 
+  return Expr<BinaryOp<Expr<TypeA>,Expr<UnaryOp<Expr<TypeB>,Negate>>,Sum>>(a,Expr<UnaryOp<Expr<TypeB>,Negate>>(b));
+}
+template<typename TypeA,typename TypeB>
+Expr<BinaryOp<Expr<TypeA>,Expr<TypeB>,Prod>>
+operator*(Expr<TypeA> a, Expr<TypeB> b) { 
+  return Expr<BinaryOp<Expr<TypeA>,Expr<TypeB>,Prod>>(a,b);
+}
+template<typename TypeA,typename TypeB>
+Expr<BinaryOp<Expr<TypeA>,Expr<UnaryOp<Expr<TypeB>,MultInv>>,Prod>>
+operator/(Expr<TypeA> a, Expr<TypeB> b) { 
+  return Expr<BinaryOp<Expr<TypeA>,Expr<UnaryOp<Expr<TypeB>,MultInv>>,Prod>>(a,Expr<UnaryOp<Expr<TypeB>,MultInv>>(b));
+}
 
 // toplevel build function
-template<typename Type,typename... CtorArgs>
-void buildRealExpr(msg::RealExpr::Builder realExpr,RealExprBase<Type,CtorArgs...> e) {
+template<typename T>
+void buildRealExpr(msg::RealExpr::Builder realExpr,Expr<T> e) {
   e.build(realExpr);
 }
 
