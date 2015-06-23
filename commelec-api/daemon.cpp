@@ -263,7 +263,7 @@ private:
           break;
 
         case Resource::discreteUnif:
-          createDiscreteAdv(msg, d);
+          createDiscreteUnifAdv(msg, d);
           break;
 
         default:
