@@ -49,7 +49,7 @@ void
 
 _uniformRealDiscreteDeviceAdvertisement(msg::Advertisement::Builder adv, 
                     double Pmin,double Pmax, // active power bounds
-                    int numPoints, double minPoint, double stepSize,
+                    double stepSize,
                     double accumulatedError, //  
                     double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
                     double Pimp);
