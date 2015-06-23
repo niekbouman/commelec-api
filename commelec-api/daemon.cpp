@@ -33,7 +33,7 @@ using AgentIdType = uint32_t;
 
 using namespace boost::filesystem;
 
-enum class Resource { battery, pv, fuelcell };
+enum class Resource { battery, pv, fuelcell, discrete, discreteUnif };
 using ResourceMap = std::unordered_map<std::string, Resource> ;
 
 enum {
@@ -54,6 +54,41 @@ void createBattAdv(msg::Message::Builder msg, rapidjson::Document& d) {
 
   _BatteryAdvertisement(msg.initAdvertisement(), Pmin, Pmax, Srated, coeffP,
                         coeffPsquared, 0.0, Pimp, Qimp);
+  return;
+}
+
+void createDiscreteAdv(msg::Message::Builder msg, rapidjson::Document &d) {
+  auto Pmin = d["Pmin"].GetDouble();
+  auto Pmax = d["Pmax"].GetDouble();
+  auto error = d["error"].GetDouble();
+
+  std::vector<double> points;
+  auto &pointList = d["points"];
+  for (auto itr = pointList.Begin(); itr != pointList.End(); ++itr)
+    points.push_back(itr->GetDouble());
+
+  auto coeffP = d["coeffP"].GetDouble();
+  auto coeffPsquared = d["coeffPsquared"].GetDouble();
+  auto Pimp = d["Pimp"].GetDouble();
+
+  _realDiscreteDeviceAdvertisement(msg.initAdvertisement(), Pmin, Pmax, points,
+                                   error, coeffPsquared, coeffP, Pimp);
+  return;
+}
+
+void createDiscreteUnifAdv(msg::Message::Builder msg, rapidjson::Document &d) {
+  auto Pmin = d["Pmin"].GetDouble();
+  auto Pmax = d["Pmax"].GetDouble();
+  auto stepsize = d["stepsize"].GetDouble();
+  auto error = d["error"].GetDouble();
+
+  auto coeffP = d["coeffP"].GetDouble();
+  auto coeffPsquared = d["coeffPsquared"].GetDouble();
+  auto Pimp = d["Pimp"].GetDouble();
+
+  _uniformRealDiscreteDeviceAdvertisement(msg.initAdvertisement(), Pmin, Pmax,
+                                          stepsize, error, coeffPsquared,
+                                          coeffP, Pimp);
   return;
 }
 
@@ -206,6 +241,15 @@ private:
         case Resource::battery:
           createBattAdv(msg,d);
           break;
+
+        case Resource::discrete:
+          createDiscreteAdv(msg,d);
+          break;
+
+        case Resource::discreteUnif:
+          createDiscreteAdv(msg,d);
+          break;
+
       }
 
       serializeAndAsyncSend(_builder, _network_socket, _network_dest_endpoint,yield);
@@ -336,7 +380,9 @@ int main(int argc, char *argv[]) {
 
   ResourceMap resources({{"pv", Resource::pv},
                          {"battery", Resource::battery},
-                         {"fuelcell", Resource::fuelcell}});
+                         {"fuelcell", Resource::fuelcell},
+                         {"discrete-uniform", Resource::discreteUnif},
+                         {"discrete", Resource::discrete}});
 
   boost::asio::io_service io_service;
   // needed for ASIO's eventloop
