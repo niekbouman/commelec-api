@@ -33,7 +33,7 @@ using AgentIdType = uint32_t;
 
 using namespace boost::filesystem;
 
-enum class Resource { battery, pv, fuelcell, discrete, discreteUnif };
+enum class Resource { battery, pv, fuelcell, discrete, discreteUnif, custom };
 using ResourceMap = std::unordered_map<std::string, Resource> ;
 
 enum {
@@ -161,49 +161,59 @@ private:
 
       auto asio_buffer = boost::asio::buffer(_network_data, networkBufLen);
       boost::asio::ip::udp::endpoint sender_endpoint;
-      size_t bytes_received =
-          _network_socket.async_receive_from(asio_buffer, sender_endpoint, yield);
+      size_t bytes_received = _network_socket.async_receive_from(
+          asio_buffer, sender_endpoint, yield);
       // wait for incoming packet
 
-      CapnpReader reader(asio_buffer);
-      msg::Message::Reader msg = reader.getMessage();
-      if (!msg.hasRequest())
-        throw;
-      auto req = msg.getRequest();
-      // parse Capnp
+      if (_resourceType == Resource::custom) {
 
-      SPDLOG_DEBUG(logger, "Request received from GA");
+        // forward payload to client
+        auto bytesWritten = _local_socket.async_send_to(
+            asio_buffer, _local_dest_endpoint, yield);
 
-      Document d;
-      d.SetObject();
 
-      Value spValid;
-      auto valid = req.hasSetpoint();
-      spValid.SetBool(valid);
+      } else {
 
-      double P, Q;
-      if (valid) {
-        auto sp = req.getSetpoint();
-        P = sp[0];
-        Q = sp[1];
+        CapnpReader reader(asio_buffer);
+        msg::Message::Reader msg = reader.getMessage();
+        if (!msg.hasRequest())
+          throw;
+        auto req = msg.getRequest();
+        // parse Capnp
+
+        SPDLOG_DEBUG(logger, "Request received from GA");
+
+        Document d;
+        d.SetObject();
+
+        Value spValid;
+        auto valid = req.hasSetpoint();
+        spValid.SetBool(valid);
+
+        double P, Q;
+        if (valid) {
+          auto sp = req.getSetpoint();
+          P = sp[0];
+          Q = sp[1];
+        }
+
+        auto &allocator = d.GetAllocator();
+        // must pass an allocator when the object may need to allocate memory
+
+        d.AddMember("setpointValid", spValid, allocator);
+        d.AddMember("senderId", msg.getAgentId(), allocator);
+        d.AddMember("P", P, allocator);
+        d.AddMember("Q", Q, allocator);
+        // construct the JSON object
+
+        StringBuffer buffer;
+        Writer<StringBuffer> writer(buffer);
+        d.Accept(writer);
+        std::string payload = buffer.GetString();
+        _local_socket.async_send_to(boost::asio::buffer(payload),
+                                    _local_dest_endpoint, yield);
+        // flatten to string and send packet
       }
-
-      auto &allocator = d.GetAllocator();
-      // must pass an allocator when the object may need to allocate memory
-
-      d.AddMember("setpointValid", spValid, allocator);
-      d.AddMember("senderId", msg.getAgentId(), allocator);
-      d.AddMember("P", P, allocator);
-      d.AddMember("Q", Q, allocator);
-      // construct the JSON object
-
-      StringBuffer buffer;
-      Writer<StringBuffer> writer(buffer);
-      d.Accept(writer);
-      std::string payload = buffer.GetString();
-      _local_socket.async_send_to(boost::asio::buffer(payload), _local_dest_endpoint,
-                                    yield);
-      // flatten to string and send packet
     }
   }
   void listenRAside(boost::asio::yield_context yield) {
@@ -219,42 +229,50 @@ private:
 
       SPDLOG_DEBUG(logger, "Packet received from RA, bytes: {}", bytes_received);
 
-      Document d;
-      _local_data[bytes_received]=0; // terminate data as C-string
-      d.Parse(reinterpret_cast<const char*>(_local_data)); 
-      // parse JSON
-      
+      if (_resourceType == Resource::custom) {
 
-      auto msg = _builder.initRoot<msg::Message>();
-      msg.setAgentId(_agentId);
-      // make advertisement, depending on which resource
+        // forward payload (later, we will add transport-layer logic here)
+        auto bytesWritten = _network_socket.async_send_to(asio_buffer, _network_dest_endpoint, yield);
 
-      switch (_resourceType){
+      } else {
+
+        Document d;
+        _local_data[bytes_received] = 0; // terminate data as C-string
+        d.Parse(reinterpret_cast<const char *>(_local_data));
+        // parse JSON
+
+        auto msg = _builder.initRoot<msg::Message>();
+        msg.setAgentId(_agentId);
+        // make advertisement, depending on which resource
+
+        switch (_resourceType) {
         case Resource::pv:
-          createPVAdv(msg,d);
+          createPVAdv(msg, d);
           break;
 
         case Resource::fuelcell:
-          createFuelCellAdv(msg,d);
+          createFuelCellAdv(msg, d);
           break;
 
         case Resource::battery:
-          createBattAdv(msg,d);
+          createBattAdv(msg, d);
           break;
 
         case Resource::discrete:
-          createDiscreteAdv(msg,d);
+          createDiscreteAdv(msg, d);
           break;
 
         case Resource::discreteUnif:
-          createDiscreteAdv(msg,d);
+          createDiscreteAdv(msg, d);
           break;
 
+        default:
+          break;
+        }
+        serializeAndAsyncSend(_builder, _network_socket, _network_dest_endpoint,
+                              yield);
+        // send packet
       }
-
-      serializeAndAsyncSend(_builder, _network_socket, _network_dest_endpoint,yield);
-      // send packet
-
     }
   }
 
@@ -381,6 +399,7 @@ int main(int argc, char *argv[]) {
   ResourceMap resources({{"pv", Resource::pv},
                          {"battery", Resource::battery},
                          {"fuelcell", Resource::fuelcell},
+                         {"custom", Resource::custom},
                          {"discrete-uniform", Resource::discreteUnif},
                          {"discrete", Resource::discrete}});
 
