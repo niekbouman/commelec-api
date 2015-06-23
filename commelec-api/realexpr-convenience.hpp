@@ -95,7 +95,7 @@ template <typename T> class Expr {};
 class _Ref {};
 template <> class Expr<_Ref> {
   // Used to refer to named RealExpr- or SetExpr-essions, for example Ref a("a")
-  const std::string &_refname;
+  const std::string _refname;
 
 public:
   Expr(const std::string &ref) : _refname(ref) {}
@@ -110,7 +110,7 @@ using Ref = Expr<_Ref>;
 class _Var {};
 template <> class Expr<_Var> {
   // Symbolic variable, for example Var X("X")
-  const std::string &_varname;
+  const std::string _varname;
 
 public:
   Expr(const std::string &var) : _varname(var) {}
@@ -125,11 +125,11 @@ using Var = Expr<_Var>;
 template <typename T> class _Name {};
 template <typename T> class Expr<_Name<Expr<T>>> {
   // can be used to name a (sub-) expression
-  const Expr<T> &_expr;
-  const std::string &_name;
+  Expr<T> _expr;
+  const std::string _name;
 
 public:
-  Expr(const Ref &ref, Expr<T> ex) : _name(ref.getName()), _expr(ex) {}
+  Expr(const Ref &ref, const Expr<T>& ex) : _name(ref.getName()), _expr(ex) {}
   void build(msg::RealExpr::Builder realExpr) const  {
     realExpr.setName(_name);
     _expr.build(realExpr);
@@ -155,7 +155,7 @@ using Real = Expr<_Real>;
 
 class _Polynomial {};
 template <> class Expr<_Polynomial> {
-  const MonomialSum& _expr;
+  MonomialSum _expr;
 
 public:
   Expr(const MonomialSum& m) : _expr(m) {}
@@ -169,7 +169,7 @@ using Polynomial = Expr<_Polynomial>;
 template <typename TypeA, typename Operation> class UnaryOp {};
 template <typename T, typename Operation>
 class Expr<UnaryOp<Expr<T>, Operation>> : public Operation {
-  const Expr<T> &arg;
+  Expr<T> arg;
 
 public:
   Expr(const Expr<T> &a) : arg(a) {}
@@ -184,8 +184,8 @@ public:
 template <typename TypeA, typename TypeB, typename Operation> class BinaryOp {};
 template <typename T1, typename T2, typename Operation>
 class Expr<BinaryOp<Expr<T1>, Expr<T2>, Operation>> : public Operation {
-  const Expr<T1> &argA;
-  const Expr<T2> &argB;
+  Expr<T1> argA;
+  Expr<T2> argB;
 
 public:
   Expr(const Expr<T1> &a, const Expr<T2> &b) : argA(a), argB(b) {}
