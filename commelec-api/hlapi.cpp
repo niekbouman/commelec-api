@@ -320,7 +320,8 @@ public:
       auto roundBelief = bf.initSingleton(2);
       Var P("P");
       Real step(stepSize);
-      buildRealExpr(roundBelief[0], step * round(P/step));
+      Real err(error);
+      buildRealExpr(roundBelief[0], step * round((P-err)/step));
       roundBelief[1].setVariable("Q"); // and directly forward Q
   }
 };
@@ -369,7 +370,7 @@ public:
     // fixed by the list ordering of the cases in the case distinction.
     for (auto i = 0; i < sz - 1; ++i) {
       auto boundary = (points[i] + points[i + 1]) / 2.0;
-      addCase(caseItems[i], points[i], -inf + error, boundary + error);
+      addCase(caseItems[i], points[i], -inf, boundary + error);
       // instead of subtracting the error from P, we shift the boundaries of the
       // intervals by the error
     }
