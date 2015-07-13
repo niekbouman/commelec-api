@@ -12,10 +12,11 @@ More concretely, we have defined a message format, based on [Cap'n Proto](https:
 Although our primary use case is the Commelec control framework, the convenience functions to encode the objects and the interpreter might be of independent interest.
 
 ## Table of Contents
-[Build instructions](docs/building.md)
-[Tutorial: Writing a resource agent in Python](docs/pytutorial.md)
-[Using commelecd, Commelec's communication daemon](docs/daemon.md)
-[Explanation of the (capnproto) schema of our message format](docs/schema.md)
+* [Build instructions](docs/building.md)
+* [Tutorial: Writing a resource agent in Python](docs/pytutorial.md)
+* [Using commelecd, Commelec's communication daemon](docs/daemon.md)
+* [Explanation of the (capnproto) schema of our message format](docs/schema.md)
+* [Low-level API usage examples](docs/llapi.md)
 
 ## Message format specification and API for the Commelec Smart-Grid-control platform.
 
