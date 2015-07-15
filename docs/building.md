@@ -12,6 +12,12 @@ The code uses [C++11](http://en.wikipedia.org/wiki/C++11), hence needs a newer c
 * Visual C++ >= 2015 (Windows)
 * MinGW-w64 >= 3 (for cross-compiling to Windows)
 
+## Instructions for Installing the Required Dependencies on Debian 8 (unstable)
+
+```
+aptitude install g++ git ninja libboost-dev libboost-system-dev libboost-filesystem-dev libboost-coroutine-dev libboost-context-dev capnproto libcapnp-dev libeigen3-dev
+```
+
 ## Cloning the repository including the submodules
 To properly clone the Git repository including the submodules, issue
 ```
