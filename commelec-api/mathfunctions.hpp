@@ -26,7 +26,11 @@
 #include <Eigen/Dense>
 #include <Eigen/Core>
 #include <capnp/message.h>
-#include "schema.capnp.h"
+#include <commelec-api/schema.capnp.h>
+
+std::tuple<bool,int,int> 
+check_capnp_matrix(capnp::List<capnp::List<msg::RealExpr>>::Reader matrix); 
+// check dimensions of capnp matrix
 
 void initFromEigen(const Eigen::MatrixXd &eigen_matrix,
                    capnp::List<capnp::List<msg::RealExpr>>::Builder capnp_mat);

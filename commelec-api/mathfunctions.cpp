@@ -20,9 +20,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 // 
-#include "mathfunctions.hpp"
+#include <commelec-api/mathfunctions.hpp>
+#include <vector>
+#include <set>
+#include <tuple>
 
 using namespace msg;
+
+std::tuple<bool,int,int> 
+check_capnp_matrix(capnp::List<capnp::List<RealExpr>>::Reader matrix){ 
+// verify that each inner list has the same length
+// matrix encoding should be row-major
+
+  int rows = matrix.size();  
+  std::vector<int> col_sizes{};
+  for (auto row: matrix) col_sizes.push_back(row.size());   
+  std::set<int> col_sizes_set(col_sizes.cbegin(),col_sizes.cend());
+  auto it_max = std::max_element(col_sizes_set.cbegin(),col_sizes_set.cend());
+  int cols = (it_max != col_sizes_set.cend()) ? *it_max : 0;
+  return std::make_tuple( col_sizes_set.size() != 1, rows, cols);
+}
 
 void initFromEigen(const Eigen::MatrixXd &eigen_matrix,
                    capnp::List<capnp::List<msg::RealExpr>>::Builder capnp_mat) {

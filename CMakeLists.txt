@@ -46,5 +46,13 @@ link_directories (${Boost_LIBRARY_DIRS})
 include_directories ("${PROJECT_SOURCE_DIR}") 
 include_directories ("${PROJECT_SOURCE_DIR}/externals/rapidjson/include") 
 include_directories ("${PROJECT_SOURCE_DIR}/externals/spdlog/include") 
+include_directories ("${PROJECT_SOURCE_DIR}/externals") 
 
 add_subdirectory(commelec-api)
+add_subdirectory(externals/seidel_lp)
+add_subdirectory(commelec-interpreter)
+
+# Testing
+add_subdirectory(tests)
+enable_testing()
+add_test(interpreter_test tests/interpreter_test)
