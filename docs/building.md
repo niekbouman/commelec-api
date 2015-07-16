@@ -12,10 +12,21 @@ The code uses [C++11](http://en.wikipedia.org/wiki/C++11), hence needs a newer c
 * Visual C++ >= 2015 (Windows)
 * MinGW-w64 >= 3 (for cross-compiling to Windows)
 
-## Instructions for Installing the Required Dependencies on Debian 8 (unstable)
+## Instructions for Installing the Required Dependencies on Debian/Ubuntu 
+(Where we assume that your Linux distribution comes with g++ with version >=4.8)
 
 ```
-aptitude install g++ git ninja libboost-dev libboost-system-dev libboost-filesystem-dev libboost-coroutine-dev libboost-context-dev capnproto libcapnp-dev libeigen3-dev
+sudo aptitude install g++ git ninja libboost-dev libboost-system-dev libboost-filesystem-dev libboost-coroutine-dev libboost-context-dev libeigen3-dev
+```
+
+We compile and install Cap'n Proto manually to ensure that the version is sufficiently recent (the instructions below originate from [the installation page of Cap'n Proto's website](https://capnproto.org/install.html): 
+```
+curl -O https://capnproto.org/capnproto-c++-0.5.2.tar.gz
+tar zxf capnproto-c++-0.5.2.tar.gz
+cd capnproto-c++-0.5.2
+./configure
+make -j6 check
+sudo make install
 ```
 
 ## Cloning the repository including the submodules
