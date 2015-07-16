@@ -51,7 +51,16 @@ class JSONReqHandler(SocketServer.BaseRequestHandler):
 
         printRequest(request)
         [P,Q] = (request['P'],request['Q'])
-        implementSetpoint(P,Q)
+        
+        if request['setpointValid']:
+            implementSetpoint(P,Q)
+        else:
+            [P,Q] = (1.0e3,0)
+            # we did not get a valid setpoint from the grid agent
+            # hence we simulate that the PV converter is currently
+            # implementing the above setpoint 
+            # (in a real resource agent, you would obviously not do this)
+
         paramsAsDict = computePVparameters(P,Q)
 
         # send the parameters to the daemon 
