@@ -88,7 +88,7 @@ Here, we assume that you have built the project, so that you can run the executa
 
 First, we will generate a default configuration file, by running
   
-  commelecd --generate
+    commelecd --generate
 
 This creates the file `daemon-cfg.json`. Open this file with a text editor and set "resource-type" to "pv". Also, set the appropriate ip addresses and port numbers.
 
@@ -96,10 +96,10 @@ This creates the file `daemon-cfg.json`. Open this file with a text editor and s
 
 Open a terminal and run
 
-  commelecd daemon-cfg.json
+    commelecd daemon-cfg.json
 
 Then, in a new terminal, run the Python code
 
-  python demo-resource-agent.py
+    python demo-resource-agent.py
 
 work in progres...
