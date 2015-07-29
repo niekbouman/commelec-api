@@ -52,8 +52,12 @@ public:
     using namespace rapidjson;
 
     Value error(kObjectType);
-    error.AddMember("code", code, allocator);
-    error.AddMember("msg", msg, allocator);
+    error.AddMember("code", static_cast<int>(code), allocator);
+
+    Value mesg;
+    mesg.SetString(msg.c_str(), allocator);
+    error.AddMember("msg", mesg, allocator);
+
     errorsArray.PushBack(error, allocator);
   }
 
@@ -95,6 +99,7 @@ public:
         else
           result(i, j) = nan;
       }
+    return result;
   }
 
   rapidjson::Value
@@ -152,6 +157,7 @@ public:
       result.PushBack(Value().SetDouble(activeVal), allocator);
       result.PushBack(Value().SetInt(count), allocator);
     }
+    return result;
   }
 
   void renderCostFunction(rapidjson::Document &request,
@@ -206,8 +212,8 @@ public:
     cf.AddMember("data",compressedM,allocator);
     cf.AddMember("originP",p(0),allocator);
     cf.AddMember("originQ",q(0),allocator);
-    cf.AddMember("dimP",p.size(),allocator);
-    cf.AddMember("dimQ",q.size(),allocator);
+    cf.AddMember("dimP",static_cast<int>(p.size()),allocator);
+    cf.AddMember("dimQ",static_cast<int>(q.size()),allocator);
 
     response.AddMember("cf", cf, allocator);
   }
@@ -236,7 +242,7 @@ public:
 
           // read payload
           jsonData.resize(header.jsonLen); // increase buffer size if necessary
-          boost::asio::async_read(socket_, boost::asio::buffer(jsonData),
+          boost::asio::async_read(socket_, boost::asio::buffer(const_cast<char*>(jsonData.data()),jsonData.size()),
                                   yield);
           Document jsonRequest;
           jsonRequest.Parse(jsonData.c_str());
@@ -255,14 +261,11 @@ public:
                      ErrorCode::not_an_advertisement,
                      "capnproto payload is not an advertisement");
           } else {
-
             renderCostFunction(jsonRequest,jsonReply,msg.getAdvertisement());
-
           }
 
  
           // serialize to json
-
           if (errors.MemberCount() > 0)
           {
             // add errors to json object if there were any
@@ -272,7 +275,7 @@ public:
           StringBuffer buffer;
           Writer<StringBuffer> writer(buffer);
           jsonReply.Accept(writer);
-          std::string payload = buffer.GetString();
+          std::string payload { buffer.GetString() };
 
           uint32_t len = payload.size();
           std::string lenHeader{sizeof(len), '0'};

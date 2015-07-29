@@ -51,6 +51,7 @@ include_directories ("${PROJECT_SOURCE_DIR}/externals")
 add_subdirectory(commelec-api)
 add_subdirectory(externals/seidel_lp)
 add_subdirectory(commelec-interpreter)
+add_subdirectory(utils)
 
 # Testing
 add_subdirectory(tests)
