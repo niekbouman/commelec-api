@@ -1,13 +1,11 @@
+// visualization server
+// Copyright (c) 2015 Niek J. Bouman
+//
+//
 // modified from:
-//
-// echo_server.cpp
-// ~~~~~~~~~~~~~~~
-//
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
-//
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-//
+// echo_server.cpp (from Boost Asio documentation, by 
+// Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Boost Software License, Version 1.0.)
 
 #include <commelec-api/sender-policies.hpp>
 #include <commelec-interpreter/adv-interpreter.hpp>
@@ -21,14 +19,13 @@
 #include <memory>
 #include <limits>
 #include <vector>
+#include <set>
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
 
 #include <Eigen/Core> 
 using boost::asio::ip::tcp;
-
-enum { headerLen = 4 };
 
 struct header_t {
   uint32_t jsonLen;
@@ -60,6 +57,103 @@ public:
     errorsArray.PushBack(error, allocator);
   }
 
+  template <typename DerivedA, typename DerivedB>
+  Eigen::MatrixXd
+  evalFunOnPQDomain(msg::RealExpr::Reader pqFun, msg::SetExpr::Reader pqDomain, 
+                    AdvFunc &interpreter,
+                    const Eigen::MatrixBase<DerivedA> &evalPointsP,
+                    const Eigen::MatrixBase<DerivedB> &evalPointsQ)
+
+  {
+    // Evaluate a function in P and Q (e.g., a cost function) on a domain in the
+    // PQ plane (e.g., a PQ profile)
+    //
+    // The vectors of evaluation points (evalPointsP and evalPointsQ) define a
+    // rectangular grid in the PQ plane. The result of this function (a
+    // double-valued matrix) has the same dimensions as this rectangular grid.
+    //
+    // For every point on the grid, we first test whether the grid point lies in
+    // the specified domain:
+    //  if not, we set the corresponding entry in the result-matrix to "NaN"
+    //  if the point lies in the domain, then we evaluate the function on this
+    //  point and store the function value in the result-matrix
+
+    auto dimP = evalPointsP.size();
+    auto dimQ = evalPointsQ.size();
+
+    Eigen::MatrixXd result(dimP, dimQ);
+
+    double nan = std::numeric_limits<double>::quiet_NaN();
+
+    for (auto i = 0; i < dimP; ++i)
+      for (auto j = 0; j < dimQ; ++j) {
+        auto isMember = interpreter.testMembership(
+            pqDomain, {evalPointsP(i), evalPointsQ(j)}, {});
+        if (isMember)
+          result(i, j) = interpreter.evaluate(
+              pqFun, {{"P", evalPointsP(i)}, {"Q", evalPointsQ(j)}});
+        else
+          result(i, j) = nan;
+      }
+  }
+
+  rapidjson::Value
+  runlengthCompress(const Eigen::MatrixXd &m, std::set<double> compressVals,
+                    rapidjson::Document::AllocatorType &allocator) {
+
+    // apply runlength compression to a matrix and output the compressed matrix
+    // as a json array:
+    //
+    // example:
+    // compressVals = {NaN}
+    // m = [NaN, 1.0]
+    //     [NaN, 2.0]
+    //
+    // m has column-major storage (Eigen's default).
+    //
+    // Output (json)
+    //
+    // {[NaN, 2, 1.0, 2.0]}
+
+    using namespace rapidjson;
+    Value result(kArrayType);
+
+    size_t totalDim = m.rows() * m.cols();
+    auto data = m.data();
+
+    int i = 0;
+    int count = 0;
+    double activeVal;
+
+    while (i < totalDim) {
+      auto datum = data[i];
+
+      if (count > 0) {
+        if (datum == activeVal) {
+          ++count;
+          continue;
+        } else {
+          result.PushBack(Value().SetDouble(activeVal), allocator);
+          result.PushBack(Value().SetInt(count), allocator);
+          result.PushBack(Value().SetDouble(datum), allocator);
+          count = 0;
+          continue;
+        }
+      } else if (compressVals.count(datum)) {
+        activeVal = datum;
+        count = 1;
+        continue;
+      } else
+        // an 'ordinary' value, to which our compression method does not apply
+        result.PushBack(Value().SetDouble(datum), allocator);
+    }
+    // terminate properly
+    if (count > 0) {
+      result.PushBack(Value().SetDouble(activeVal), allocator);
+      result.PushBack(Value().SetInt(count), allocator);
+    }
+  }
+
   void renderCostFunction(rapidjson::Document &request,
                           rapidjson::Document &response,
                           msg::Advertisement::Reader adv) {
@@ -67,10 +161,12 @@ public:
     AdvFunc interpreter(adv);
     auto pqProf = adv.getPQProfile();
     Eigen::AlignedBoxXd bb = interpreter.rectangularHull(pqProf, {});
+    // Compute the axis-aligned bounding box around the PQ profile (which is the
+    // domain of the cost function)
 
+    // Construct a suitable grid of evaluation points
     Eigen::VectorXd min(bb.min());
     Eigen::VectorXd max(bb.max());
-
     Eigen::VectorXd p, q;
     if (request.HasMember("resP") && request.HasMember("resQ")) {
       auto resP = request["resP"].GetDouble();
@@ -93,60 +189,27 @@ public:
       return;
     }
 
-    auto dimP = p.size();
-    auto dimQ = q.size();
+    // rasterize cost function on given grid
+    Eigen::MatrixXd rasterizedCF(
+        evalFunOnPQDomain(adv.getCostFunction(), pqProf, interpreter, p, q));
 
-    Eigen::MatrixXd result(dimP, dimQ);
+    // apply runlength compression to the elements NaN and zero (it is expected
+    // that there will be many 'burst' patters of both elements, hence runlength
+    // compression makes sense here)
+    auto& allocator = response.GetAllocator();
+    auto compressedM(runlengthCompress(
+        rasterizedCF,
+        {static_cast<double>(0), std::numeric_limits<double>::quiet_NaN()},
+        allocator));
 
-    auto costFun = adv.getCostFunction();
+    rapidjson::Value cf(rapidjson::kObjectType);
+    cf.AddMember("data",compressedM,allocator);
+    cf.AddMember("originP",p(0),allocator);
+    cf.AddMember("originQ",q(0),allocator);
+    cf.AddMember("dimP",p.size(),allocator);
+    cf.AddMember("dimQ",q.size(),allocator);
 
-    double nan = std::numeric_limits<double>::quiet_NaN();
-
-    for (auto i = 0; i < dimP; ++i) {
-      for (auto j = 0; j < dimQ; ++j) {
-        auto isMember = interpreter.testMembership(pqProf, {p(i), q(j)}, {});
-        if (isMember) {
-          result(i, j) =
-              interpreter.evaluate(costFun, {{"P", p(i)}, {"Q", q(j)}});
-        } else {
-          result(i, j) = nan;
-        }
-      }
-    }
-
-    using namespace rapidjson;
-    rapidjson::Value compressedMatrix(kArrayType);
-
-    auto totalDim = dimP*dimQ;
-    auto data = result.data();
-
-    int i =0;
-    int count = 0;
-    while (i < totalDim) {
-      auto datum = data[i];
-
-      if (datum == nan) {
-        ++count;
-        continue;
-      }
-
-      if (count > 0) {
-        compressedMatrix.PushBack(Value().SetDouble(nan), allocator);
-        compressedMatrix.PushBack(Value().SetInt(count), allocator);
-        count = 0;
-      } else
-        // write char
-        compressedMatrix.PushBack(Value().SetDouble(datum), allocator);
-    }
-    // terminate properly
-    if (count > 0) {
-        compressedMatrix.PushBack(Value().SetDouble(nan), allocator);
-        compressedMatrix.PushBack(Value().SetInt(count), allocator);
-    } 
-
-
-
-
+    response.AddMember("cf", cf, allocator);
   }
 
   void sessionLoop() {
@@ -175,8 +238,8 @@ public:
           jsonData.resize(header.jsonLen); // increase buffer size if necessary
           boost::asio::async_read(socket_, boost::asio::buffer(jsonData),
                                   yield);
-          Document d;
-          d.Parse(jsonData.c_str());
+          Document jsonRequest;
+          jsonRequest.Parse(jsonData.c_str());
 
           capnpData.resize(
               header.capnpLen); // increase buffer size if necessary
@@ -193,11 +256,8 @@ public:
                      "capnproto payload is not an advertisement");
           } else {
 
-            AdvFunc interpreter(msg.getAdvertisement());
-            // renderCostFunction();
-            // renderBeliefFunction();
+            renderCostFunction(jsonRequest,jsonReply,msg.getAdvertisement());
 
-            // runlengthCompression();
           }
 
  
