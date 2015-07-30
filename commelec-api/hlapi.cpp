@@ -312,6 +312,53 @@ void _PVAdvertisement(msg::Advertisement::Builder adv, double Srated,
   buildPolynomial(cf.initPolynomial(), -a_pv * Pvar + b_pv * (Qvar ^ 2));
 }
 
+void _uncontrollableLoad(msg::Advertisement::Builder adv, double Srated,
+                         double dPup, double dPdown, double dQup, double dQdown,
+                         double Pimp, double Qimp) {
+
+  using namespace cv;
+  constexpr auto dim = 2; // dimension of the PQ plane
+
+  // Implemented setpoint
+  auto setpoint = adv.initImplementedSetpoint(dim);
+  setpoint.set(0, Pimp);
+  setpoint.set(1, Qimp);
+
+  // PQ profile: singleton
+  auto sing = adv.initPQProfile().initSingleton(dim);
+  sing[0].setReal(Pimp);
+  sing[1].setReal(Qimp);
+
+  // Belief: intersection of rectangle (A) with negative P halfplane (B) and disk (C)
+  auto intsect = adv.initBeliefFunction().initIntersection(3);
+
+  // A: rectangle around (P,Q) 
+  auto rect = intsect[0].initRectangle(dim);
+  Var P("P");
+  Var Q("Q");
+  buildRealExpr(rect[0].initBoundA(), P-Real(dPdown));
+  buildRealExpr(rect[0].initBoundB(), P+Real(dPup));
+  buildRealExpr(rect[1].initBoundA(), Q-Real(dQdown));
+  buildRealExpr(rect[1].initBoundB(), Q+Real(dQup));
+
+  // B: negative halfplane in P (a load only consumes power)
+  Eigen::MatrixXd A(dim, 1);
+  A << 1, 0;
+  Eigen::VectorXd b(1);
+  b << 0;
+  cv::buildConvexPolytope(A, b, intsect[1].initConvexPolytope());
+
+  // C: converter rating (disk)
+  auto disk = intsect[2].initBall();
+  disk.getRadius().setReal(Srated);
+  auto center = disk.initCenter(dim);
+  center[0].setReal(0);
+  center[1].setReal(0);
+
+  // zero cost
+  adv.initCostFunction().setReal(0);
+}
+
 class RoundBelief {
 public:
   void makeBelief(msg::SetExpr::Builder bf, double stepSize, double error)

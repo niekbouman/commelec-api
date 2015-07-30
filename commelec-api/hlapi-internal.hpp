@@ -29,14 +29,27 @@
 #include <commelec-api/schema.capnp.h> 
 #include <capnp/message.h>
 #include <vector>
-//void _sendToLocalhost(::capnp::MallocMessageBuilder& builder, uint16_t destPort);
 
-void _BatteryAdvertisement(msg::Advertisement::Builder adv, double Pmin, double Pmax, double Srated,
-                                 double coeffP, double coeffPsquared,
-                                 double coeffPcubed, double Pimp, double Qimp);
+void _BatteryAdvertisement(msg::Advertisement::Builder adv, double Pmin,
+                           double Pmax, double Srated, double coeffP,
+                           double coeffPsquared, double coeffPcubed,
+                           double Pimp, double Qimp);
 
-void _PVAdvertisement(msg::Advertisement::Builder adv, double Srated, double Pmax, double Pdelta,
-                            double tanPhi, double a_pv, double b_pv, double Pimp, double Qimp);
+void _PVAdvertisement(msg::Advertisement::Builder adv, double Srated,
+                      double Pmax, double Pdelta, double tanPhi, double a_pv,
+                      double b_pv, double Pimp, double Qimp);
+
+void _uncontrollableLoad(msg::Advertisement::Builder adv, double Srated,
+                         double dPup, double dPdown, double dQup, double dQdown,
+                         double Pimp, double Qimp);
+// Advertisement for an uncontrollable load:
+//   PQ profile = singleton(Pimp,Qimp)
+//   Belief = intersection of:
+//                  Rectangle ( (P-dPdown, Q-dQdown), (P+dPup, Q+dQup) )
+//                  Disk (center=(0,0),radius=Srated)
+//                  Halfplane (P<0) (only consumption of real power)
+//   Cost = 0 (constant function)
+//   Implemented setpoint = (Pimp,Qimp)
 
 void
 _realDiscreteDeviceAdvertisement(msg::Advertisement::Builder adv, 
