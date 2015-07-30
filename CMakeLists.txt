@@ -38,6 +38,7 @@ find_package(CapnProto 0.5 REQUIRED)
 include_directories(${CAPNP_INCLUDE_DIRS})
 add_definitions(${CAPNP_DEFINITIONS})
 
+set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost COMPONENTS system filesystem coroutine context REQUIRED)
 # the order of the libs matters for linking!
 include_directories(${Boost_INCLUDE_DIR})

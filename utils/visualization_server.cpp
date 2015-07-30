@@ -89,10 +89,11 @@ public:
 
     double nan = std::numeric_limits<double>::quiet_NaN();
 
+    ValueMap dummy;
     for (auto i = 0; i < dimP; ++i)
       for (auto j = 0; j < dimQ; ++j) {
         auto isMember = interpreter.testMembership(
-            pqDomain, {evalPointsP(i), evalPointsQ(j)}, {});
+            pqDomain, {evalPointsP(i), evalPointsQ(j)}, dummy);
         if (isMember)
           result(i, j) = interpreter.evaluate(
               pqFun, {{"P", evalPointsP(i)}, {"Q", evalPointsQ(j)}});
@@ -166,7 +167,8 @@ public:
 
     AdvFunc interpreter(adv);
     auto pqProf = adv.getPQProfile();
-    Eigen::AlignedBoxXd bb = interpreter.rectangularHull(pqProf, {});
+    ValueMap dummy;
+    Eigen::AlignedBoxXd bb = interpreter.rectangularHull(pqProf, dummy);
     // Compute the axis-aligned bounding box around the PQ profile (which is the
     // domain of the cost function)
 
