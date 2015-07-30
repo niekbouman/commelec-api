@@ -33,7 +33,7 @@ using AgentIdType = uint32_t;
 
 using namespace boost::filesystem;
 
-enum class Resource { battery, pv, fuelcell, discrete, discreteUnif, custom };
+enum class Resource { battery, pv, fuelcell, uncontrollableLoad, discrete, discreteUnif, custom };
 using ResourceMap = std::unordered_map<std::string, Resource> ;
 
 enum {
@@ -54,6 +54,21 @@ void createBattAdv(msg::Message::Builder msg, rapidjson::Document& d) {
 
   _BatteryAdvertisement(msg.initAdvertisement(), Pmin, Pmax, Srated, coeffP,
                         coeffPsquared, 0.0, Pimp, Qimp);
+  return;
+}
+
+void createUncontrLoadAdv(msg::Message::Builder msg, rapidjson::Document &d) {
+  auto Srated = d["Srated"].GetDouble();
+  auto dPup = d["dPup"].GetDouble();
+  auto dPdown = d["dPdown"].GetDouble();
+  auto dQup = d["dQup"].GetDouble();
+  auto dQdown = d["dQdown"].GetDouble();
+  auto Pimp = d["Pimp"].GetDouble();
+  auto Qimp = d["Qimp"].GetDouble();
+
+  _uncontrollableLoad(msg.initAdvertisement(), Srated, dPup, dPdown, dQup,
+                      dQdown, Pimp, Qimp);
+
   return;
 }
 
@@ -258,6 +273,10 @@ private:
           createBattAdv(msg, d);
           break;
 
+        case Resource::uncontrollableLoad:
+          createUncontrLoadAdv(msg, d);
+          break;
+
         case Resource::discrete:
           createDiscreteAdv(msg, d);
           break;
@@ -399,6 +418,7 @@ int main(int argc, char *argv[]) {
   ResourceMap resources({{"pv", Resource::pv},
                          {"battery", Resource::battery},
                          {"fuelcell", Resource::fuelcell},
+                         {"uncontr-load", Resource::uncontrollableLoad},
                          {"custom", Resource::custom},
                          {"discrete-uniform", Resource::discreteUnif},
                          {"discrete", Resource::discrete}});
