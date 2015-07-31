@@ -5,6 +5,7 @@
 LIBRARY "libhlapi.dll"
 EXPORTS
 parseRequest
+getImplSetpointFromAdv
 makeBatteryAdvertisement
 makeFuelCellAdvertisement
 makePVAdvertisement

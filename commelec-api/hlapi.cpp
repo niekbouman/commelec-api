@@ -61,6 +61,31 @@ int32_t parseRequest(const uint8_t *inBuffer, int32_t bufSize, double *P,
   }
 }
 
+int32_t getImplSetpointFromAdv(const uint8_t *inBuffer, int32_t bufSize,
+                               double *Pimp, double *Qimp, uint32_t *senderId) {
+  try {
+    ::kj::ArrayPtr<const capnp::byte> capnp_buffer(inBuffer, bufSize);
+    ::kj::ArrayInputStream is(capnp_buffer);
+    ::capnp::PackedMessageReader message(is);
+    auto msg = message.getRoot<msg::Message>();
+    *senderId = msg.getAgentId();
+
+    if (!msg.hasAdvertisement()) {
+      return hlapi_malformed_advertisement;
+    }
+
+    auto adv = msg.getAdvertisement();
+
+    auto sp = adv.getImplementedSetpoint();
+    *Pimp = sp[0];
+    *Qimp = sp[1];
+    return 1;
+
+  } catch (...) {
+    return hlapi_unknown_error;
+  }
+}
+
 /*
 void _sendToLocalhost(::capnp::MallocMessageBuilder &builder,
                       uint16_t destPort) {

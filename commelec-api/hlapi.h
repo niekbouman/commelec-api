@@ -57,6 +57,23 @@ int32_t parseRequest(const uint8_t *inBuffer, int32_t bufSize, double *P,
 //   advertisement (P and Q should be discarded)
 //  -1 = parsing failed
 
+int32_t getImplSetpointFromAdv(const uint8_t *inBuffer, int32_t bufSize,
+                               double *Pimp, double *Qimp, uint32_t *senderId);
+// extract implemented setpoint from an advertisement
+//
+// in:
+//   inBuffer = ptr to byte array, bytelength specified in bufSize
+//
+// in/out params:
+//   Pimp = real power implemented setpoint
+//   Qimp = reactive power implemented setpoint
+//   senderId = agent identifier of the sender (resource agent) of the advertisement
+//
+// return value:
+//   1                                 = success
+//  -1 (hlapi_unknown_error)           = parsing failed
+//  -5 (hlapi_malformed_advertisement) = message is not an advertisement 
+
 
 /*
 int32_t sendBatteryAdvertisement(uint16_t localPort, uint32_t agentId,
