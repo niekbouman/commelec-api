@@ -337,9 +337,9 @@ void _PVAdvertisement(msg::Advertisement::Builder adv, double Srated,
   buildPolynomial(cf.initPolynomial(), -a_pv * Pvar + b_pv * (Qvar ^ 2));
 }
 
-void _uncontrollableLoad(msg::Advertisement::Builder adv, double Srated,
+void _uncontrollableResource(msg::Advertisement::Builder adv, double Pexp, double Qexp, double Srated,
                          double dPup, double dPdown, double dQup, double dQdown,
-                         double Pimp, double Qimp) {
+                         double Pimp, double Qimp, ResourceType resType) {
 
   using namespace cv;
   constexpr auto dim = 2; // dimension of the PQ plane
@@ -351,11 +351,11 @@ void _uncontrollableLoad(msg::Advertisement::Builder adv, double Srated,
 
   // PQ profile: singleton
   auto sing = adv.initPQProfile().initSingleton(dim);
-  sing[0].setReal(Pimp);
-  sing[1].setReal(Qimp);
+  sing[0].setReal(Pexp);
+  sing[1].setReal(Qexp);
 
-  // Belief: intersection of rectangle (A) with negative P halfplane (B) and disk (C)
-  auto intsect = adv.initBeliefFunction().initIntersection(3);
+  // Belief: intersection of rectangle (A) with disk (B) and optionally P halfplane (C)
+  auto intsect = adv.initBeliefFunction().initIntersection( (resType==ResourceType::bidirectional) ? 2 : 3);
 
   // A: rectangle around (P,Q) 
   auto rect = intsect[0].initRectangle(dim);
@@ -366,19 +366,23 @@ void _uncontrollableLoad(msg::Advertisement::Builder adv, double Srated,
   buildRealExpr(rect[1].initBoundA(), Q-Real(dQdown));
   buildRealExpr(rect[1].initBoundB(), Q+Real(dQup));
 
-  // B: negative halfplane in P (a load only consumes power)
-  Eigen::MatrixXd A(dim, 1);
-  A << 1, 0;
-  Eigen::VectorXd b(1);
-  b << 0;
-  cv::buildConvexPolytope(A, b, intsect[1].initConvexPolytope());
-
-  // C: converter rating (disk)
-  auto disk = intsect[2].initBall();
+  // B: converter rating (disk)
+  auto disk = intsect[1].initBall();
   disk.getRadius().setReal(Srated);
   auto center = disk.initCenter(dim);
   center[0].setReal(0);
   center[1].setReal(0);
+
+  // C: optionally positive (generator) or negative (load) halfplane in P
+  if (resType != ResourceType::bidirectional) {
+    Eigen::MatrixXd A(dim, 1);
+
+    A << ((resType == ResourceType::load) ? 1.0 : -1.0), 0;
+
+    Eigen::VectorXd b(1);
+    b << 0;
+    cv::buildConvexPolytope(A, b, intsect[2].initConvexPolytope());
+  }
 
   // zero cost
   adv.initCostFunction().setReal(0);

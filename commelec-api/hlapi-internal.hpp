@@ -39,15 +39,40 @@ void _PVAdvertisement(msg::Advertisement::Builder adv, double Srated,
                       double Pmax, double Pdelta, double tanPhi, double a_pv,
                       double b_pv, double Pimp, double Qimp);
 
-void _uncontrollableLoad(msg::Advertisement::Builder adv, double Srated,
+enum class ResourceType { load, generator, bidirectional };
+void _uncontrollableResource(msg::Advertisement::Builder adv, double Pexp, double Qexp, double Srated,
                          double dPup, double dPdown, double dQup, double dQdown,
-                         double Pimp, double Qimp);
+                         double Pimp, double Qimp, ResourceType resType);
+
+inline void _uncontrollableLoad(msg::Advertisement::Builder adv, double Pexp,
+                                double Qexp, double Srated, double dPup,
+                                double dPdown, double dQup, double dQdown,
+                                double Pimp, double Qimp) {
+  _uncontrollableResource(adv, Pexp, Qexp, Srated, dPup, dPdown, dQup, dQdown,
+                          Pimp, Qimp, ResourceType::load);
+};
 // Advertisement for an uncontrollable load:
-//   PQ profile = singleton(Pimp,Qimp)
+//   PQ profile = singleton(Pexp,Qexp)
 //   Belief = intersection of:
 //                  Rectangle ( (P-dPdown, Q-dQdown), (P+dPup, Q+dQup) )
 //                  Disk (center=(0,0),radius=Srated)
-//                  Halfplane (P<0) (only consumption of real power)
+//                  Halfplane (P<=0) (only consumption of real power)
+//   Cost = 0 (constant function)
+//   Implemented setpoint = (Pimp,Qimp)
+
+inline void _uncontrollableGenerator(msg::Advertisement::Builder adv, double Pexp,
+                                double Qexp, double Srated, double dPup,
+                                double dPdown, double dQup, double dQdown,
+                                double Pimp, double Qimp) {
+  _uncontrollableResource(adv, Pexp, Qexp, Srated, dPup, dPdown, dQup, dQdown,
+                          Pimp, Qimp, ResourceType::generator);
+};
+// Advertisement for an uncontrollable generator:
+//   PQ profile = singleton(Pexp, Qexp)
+//   Belief = intersection of:
+//                  Rectangle ( (P-dPdown, Q-dQdown), (P+dPup, Q+dQup) )
+//                  Disk (center=(0,0),radius=Srated)
+//                  Halfplane (P>=0) (only production of real power)
 //   Cost = 0 (constant function)
 //   Implemented setpoint = (Pimp,Qimp)
 
