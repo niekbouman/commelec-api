@@ -368,7 +368,7 @@ void _uncontrollableResource(msg::Advertisement::Builder adv, double Pexp, doubl
 
   // B: converter rating (disk)
   auto disk = intsect[1].initBall();
-  disk.getRadius().setReal(Srated);
+  disk.initRadius().setReal(Srated);
   auto center = disk.initCenter(dim);
   center[0].setReal(0);
   center[1].setReal(0);
