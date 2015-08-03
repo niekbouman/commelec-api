@@ -345,12 +345,12 @@ void _uncontrollableResource(msg::Advertisement::Builder adv, double Pexp, doubl
   constexpr auto dim = 2; // dimension of the PQ plane
 
   // Implemented setpoint
-  auto setpoint = adv.initImplementedSetpoint(2);
+  auto setpoint = adv.initImplementedSetpoint(dim);
   setpoint.set(0, Pimp);
   setpoint.set(1, Qimp);
 
   // PQ profile: singleton
-  auto sing = adv.initPQProfile().initSingleton(2);
+  auto sing = adv.initPQProfile().initSingleton(dim);
   sing[0].setReal(Pexp);
   sing[1].setReal(Qexp);
 
@@ -359,7 +359,7 @@ void _uncontrollableResource(msg::Advertisement::Builder adv, double Pexp, doubl
   //auto intsect = adv.initBeliefFunction().initIntersection(3);
 
   // A: rectangle around (P,Q) 
-  auto rect = intsect[0].initRectangle(2);
+  auto rect = intsect[0].initRectangle(dim);
   Var P("P");
   Var Q("Q");
   buildRealExpr(rect[0].initBoundA(), P-Real(dPdown));
@@ -370,13 +370,13 @@ void _uncontrollableResource(msg::Advertisement::Builder adv, double Pexp, doubl
   // B: converter rating (disk)
   auto disk = intsect[1].initBall();
   disk.initRadius().setReal(Srated);
-  auto center = disk.initCenter(2);
-  center[0].setReal(0.0);
-  center[1].setReal(0.0);
+  auto center = disk.initCenter(dim);
+  center[0].setReal(0);
+  center[1].setReal(0);
 
   // C: optionally positive (generator) or negative (load) halfplane in P
   if (resType != ResourceType::bidirectional) {
-    Eigen::MatrixXd A(1, 2);
+    Eigen::MatrixXd A(1, dim);
 
     A << ((resType == ResourceType::load) ? 1.0 : -1.0), 0;
     //A << -1, 0;
