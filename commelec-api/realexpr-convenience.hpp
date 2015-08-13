@@ -125,8 +125,8 @@ using Var = Expr<_Var>;
 template <typename T> class _Name {};
 template <typename T> class Expr<_Name<Expr<T>>> {
   // can be used to name a (sub-) expression
-  Expr<T> _expr;
   const std::string _name;
+  Expr<T> _expr;
 
 public:
   Expr(const Ref &ref, const Expr<T>& ex) : _name(ref.getName()), _expr(ex) {}
