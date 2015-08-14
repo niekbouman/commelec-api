@@ -3,3 +3,6 @@ target_link_libraries (interpreter_test ${CAPNP_LIBRARIES} seidel hlapi cl_inter
 
 add_executable(send_adv send-test-advertisement.cpp ${CAPNP_SRCS})
 target_link_libraries (send_adv ${CAPNP_LIBRARIES} hlapi) 
+
+add_executable(send_req send-test-request.cpp ${CAPNP_SRCS})
+target_link_libraries (send_req ${CAPNP_LIBRARIES} hlapi) 
