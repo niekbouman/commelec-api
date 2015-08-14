@@ -1,11 +1,13 @@
-# Example: Building a RealExpr and evaluating it
+## Example: Building a RealExpr and evaluating it
 
-Below, we first define a real-valued function. The function can be then serialised using Cap'n Proto.
-Then, using an interpreter, we can evaluate the function.
+Below, we first define a real-valued function. Then, using our interpreter (the class `AdvFunc`), we can evaluate the function. (Note that this can be viewed as an implementation of the Gang-of-Four interpreter pattern.)
+
+The main feature is that the function is defined in a Cap'n Proto message.
+Hence, it can be efficiently serialised, and parsed in (possibly) a different programming language
+on (possibly) a different machine. Or, vice versa, one can define the function in a different language and parse it using the C++ interpreter.
 
 ```cpp
 #include <commelec-api/realexpr-convenience.hpp>
-#include <commelec-api/polynomial-convenience.hpp>
 #include <commelec-interpreter/adv-interpreter.hpp>
 #include <capnp/message.h>
 
