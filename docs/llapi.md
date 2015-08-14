@@ -7,6 +7,7 @@ Hence, it can be efficiently serialised, and parsed in (possibly) a different pr
 on (possibly) a different machine. Or, vice versa, one can define the function in a different language and parse it using the C++ interpreter.
 
 ```cpp
+#include <commelec-api/schema.capnp.h>
 #include <commelec-api/realexpr-convenience.hpp>
 #include <commelec-interpreter/adv-interpreter.hpp>
 #include <capnp/message.h>
