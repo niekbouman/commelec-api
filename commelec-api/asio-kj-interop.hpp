@@ -13,9 +13,18 @@ class AsioKJOutBufferAdapter : public kj::OutputStream {
   // Hence, the owner of the cap'n proto buffers must retain the memory until
   // the asio code that will actually use the data is finished with it
 public:
-  AsioKJOutBufferAdapter() : totalLen(0) {}
+  AsioKJOutBufferAdapter() : totalLen(0), first(true) {}
   void write(const void *buffer, size_t size) override {
-    bufs.push_back(boost::asio::buffer(buffer, size));
+    if (first) {
+      // we have to copy the data of the first call to write (this contains the
+      // segment table)
+      auto buf = static_cast<const kj::byte *>(buffer);
+      table.assign(buf, buf + size);
+      bufs.push_back(boost::asio::buffer(table.data(), size));
+      first = false;
+    } else {
+      bufs.push_back(boost::asio::buffer(buffer, size));
+    }
     totalLen += size;
   }
   const std::vector<boost::asio::const_buffer> &get_buffer_sequence() {
@@ -25,7 +34,9 @@ public:
 
 private:
   size_t totalLen;
+  bool first;
   std::vector<boost::asio::const_buffer> bufs;
+  std::vector<kj::byte> table;
 };
 
 #endif 

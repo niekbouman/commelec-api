@@ -33,27 +33,28 @@ size_t messageByteSize(::capnp::MessageBuilder &builder) {
 }
 
 VectorBuffer::VectorBuffer(std::vector<kj::byte> &vec)
-    : _vector(vec), bufferPos(vec.data()) {}
+    : _vector(vec), bytesWritten(0) {}
+
 kj::ArrayPtr<kj::byte> VectorBuffer::getWriteBuffer() {
-  return kj::ArrayPtr<kj::byte>(bufferPos, available());
+  return kj::ArrayPtr<kj::byte>(_vector.data() + bytesWritten, available());
 }
 
 size_t VectorBuffer::available() {
-  return _vector.data() + _vector.size() - bufferPos;
+  return _vector.size() - bytesWritten;
 }
 
 void VectorBuffer::write(const void *src, size_t size) {
-  if (src == bufferPos) {
+  if (src == _vector.data() + bytesWritten) {
     // caller wrote directly into our buffer.
-    bufferPos += size;
+    bytesWritten += size;
   } else {
     if (size > available()) {
       // resize vector (can be expensive, but can be avoided by initialising
       // the vector with a large enough size)
       _vector.resize(_vector.size() + size);
     }
-    memcpy(bufferPos, src, size);
-    bufferPos += size;
+    memcpy(_vector.data() + bytesWritten, src, size);
+    bytesWritten += size;
   }
 }
 

@@ -40,7 +40,7 @@ public:
 
 private:
   std::vector<kj::byte> &_vector;
-  kj::byte *bufferPos;
+  size_t bytesWritten;
 };
 
 void writePackedMessage(std::vector<uint8_t> &output,

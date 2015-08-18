@@ -8,7 +8,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
 endif()
 
 if(MACOSX)
-  set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
+  set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ -Wall")
   # on macosx we link to libc++
 
   set(CMAKE_MACOSX_RPATH 1)

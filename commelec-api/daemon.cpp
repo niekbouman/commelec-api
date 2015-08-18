@@ -206,16 +206,15 @@ private:
 
       auto asio_buffer = boost::asio::buffer(_network_data, networkBufLen);
       boost::asio::ip::udp::endpoint sender_endpoint;
-      size_t bytes_received = _network_socket.async_receive_from(
-          asio_buffer, sender_endpoint, yield);
+      //size_t bytes_received =
+      _network_socket.async_receive_from(asio_buffer, sender_endpoint, yield);
       // wait for incoming packet
 
       if (_resourceType == Resource::custom) {
 
         // forward payload to client
-        auto bytesWritten = _local_socket.async_send_to(
-            asio_buffer, _local_dest_endpoint, yield);
-
+        //auto bytesWritten =
+        _local_socket.async_send_to(asio_buffer, _local_dest_endpoint, yield);
 
       } else {
 
@@ -235,7 +234,7 @@ private:
         auto valid = req.hasSetpoint();
         spValid.SetBool(valid);
 
-        double P, Q;
+        double P = 0.0, Q = 0.0;
         if (valid) {
           auto sp = req.getSetpoint();
           P = sp[0];
@@ -277,7 +276,9 @@ private:
       if (_resourceType == Resource::custom) {
 
         // forward payload (later, we will add transport-layer logic here)
-        auto bytesWritten = _network_socket.async_send_to(asio_buffer, _network_dest_endpoint, yield);
+        // auto bytesWritten =
+        _network_socket.async_send_to(asio_buffer, _network_dest_endpoint,
+                                      yield);
 
       } else {
 
@@ -341,8 +342,8 @@ private:
   boost::asio::io_service::strand _strand;
   boost::asio::ip::udp::socket _local_socket;
   boost::asio::ip::udp::socket _network_socket;
-  boost::asio::ip::udp::endpoint _network_dest_endpoint;
   boost::asio::ip::udp::endpoint _local_dest_endpoint;
+  boost::asio::ip::udp::endpoint _network_dest_endpoint;
   boost::asio::high_resolution_timer _timer;
   // asio stuff
 
