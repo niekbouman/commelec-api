@@ -24,8 +24,9 @@
 #include <capnp/serialize-packed.h>
 
 size_t messageByteSize(::capnp::MessageBuilder &builder) {
-  size_t sz = 0;
   auto segments = builder.getSegmentsForOutput();
+  size_t sz = sizeof(uint32_t) * ((segments.size() + 2) & ~size_t(1));
+  // size of table
   for (auto segment : segments) {
     sz += segment.asBytes().size();
   }
