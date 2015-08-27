@@ -98,6 +98,16 @@ struct AdvFunc
   bool testMembership(msg::SetExpr::Reader set, PointTypePP point, const ValueMap &bound_vars);
   double evaluate(msg::RealExpr::Reader, const ValueMap &bound_vars);
   PointType project(msg::SetExpr::Reader, PointTypePP point, const ValueMap &bound_vars);
+
+  template <typename Derived>
+  Eigen::Vector2d project(msg::SetExpr::Reader set,
+                          const Eigen::MatrixBase<Derived> &point,
+                          const ValueMap &bound_vars) {
+    _bound_vars = &bound_vars;
+    _nesting_depth = 0;
+    return proj(set, point);
+  }
+
   Eigen::AlignedBoxXd rectangularHull(msg::SetExpr::Reader set, const ValueMap &bound_vars);
   double evalPartialDerivative(msg::RealExpr::Reader expr,std::string diffVariable, const ValueMap &bound_vars); 
 

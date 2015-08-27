@@ -1,7 +1,7 @@
 #ifndef MYJSONHPP
 #define MYJSONHPP
 
-#include "rapidjson/document.h"
+#include <rapidjson/document.h>
 
 rapidjson::Document readJSONfile(const char *configFile);
 rapidjson::Document readJSONstdin();
