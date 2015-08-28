@@ -3,6 +3,7 @@
 
 #include <commelec-api/schema.capnp.h>
 #include <capnp/message.h>
+#include <kj/string.h>
 
 #include <vector>
 #include <string>
