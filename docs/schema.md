@@ -1,5 +1,5 @@
 ## Explanation of the Schema
-To understand the text below, you should first have a look at the definition of the [schema](https://github.com/niekbouman/commelec-api/blob/master/src/schema.capnp).
+To understand the text below, you should first have a look at the definition of the [schema](https://github.com/niekbouman/commelec-api/blob/master/commelec-api/schema.capnp).
 
 The top-level struct is `Message`, which either contains a `Request`, or an `Advertisement`. 
 The `Advertisement` message is the most interesting of the latter two. It contains the following fields:
