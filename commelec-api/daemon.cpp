@@ -9,6 +9,7 @@
 #include <commelec-api/hlapi-internal.hpp>
 #include <commelec-api/sender-policies.hpp>
 #include <commelec-api/json.hpp>
+#include <commelec-api/adv-validation.hpp>
 
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
@@ -26,6 +27,9 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
+
+#include <stdexcept>
+
 
 using boost::asio::ip::udp;
 using PortNumberType = unsigned short;
@@ -175,8 +179,8 @@ public:
                  PortNumberType localhost_listen_port,
                  PortNumberType network_listen_port,
                  const boost::asio::ip::udp::endpoint &local_dest_endpoint,
-                 const boost::asio::ip::udp::endpoint &network_dest_endpoint)
-      : _agentId(agentId), _resourceType(resourceType), _strand(io_service),
+                 const boost::asio::ip::udp::endpoint &network_dest_endpoint, bool debug = false)
+      : _debug(debug), _agentId(agentId), _resourceType(resourceType), _strand(io_service),
         _local_socket(io_service,
                       udp::endpoint(udp::v4(), localhost_listen_port)),
         _network_socket(io_service,
@@ -273,12 +277,22 @@ private:
 
       SPDLOG_DEBUG(logger, "Packet received from RA, bytes: {}", bytes_received);
 
+      auto read_buffer = boost::asio::buffer(_local_data, bytes_received);
       if (_resourceType == Resource::custom) {
+        // a "custom" resource prepares packed Cap'n Proto advertisements by itself,
+        // we merely need to forward this payload 
+        //
+        // TODO (later, we will add transport-layer logic here)
+        
+        if(_debug){
+            auto buf = boost::asio::const_buffer(read_buffer);
+            AdvValidator<PackingPolicy> val(buf);
+            // throws if advertisement does not pass checks
+        }
 
-        // forward payload (later, we will add transport-layer logic here)
+
         // auto bytesWritten =
-        _network_socket.async_send_to(asio_buffer, _network_dest_endpoint,
-                                      yield);
+        _network_socket.async_send_to(read_buffer, _network_dest_endpoint, yield);
 
       } else {
 
@@ -324,17 +338,17 @@ private:
           break;
         }
         serializeAndAsyncSend(_builder, _network_socket, _network_dest_endpoint,
-                              yield);
+                              yield, _debug);
         // send packet
       }
     }
   }
 
-
   //##################
   // class attributes
   //##################
 
+  bool _debug;
 
   AgentIdType _agentId;
   Resource _resourceType;
@@ -377,6 +391,7 @@ void generateDefaultConfiguration(const char *configFile){
       d.AddMember("RA-port", 12342, allocator);
       d.AddMember("listenport-RA-side", 12340, allocator);
       d.AddMember("listenport-GA-side", 12341, allocator);
+      d.AddMember("debug-mode", false, allocator);
       // populate JSON object
 
       writeJSONfile(configFile, d);
@@ -410,12 +425,12 @@ int commandLineParser(int argc, char *argv[], std::string& configFile, ResourceM
              << endl;
         return -1;
       }
-      cout << "Generating configuration file... (This file can "
-              "be edited by hand)" << endl;
+      cout << "Generating configuration file: " << configFile << " ... ";
 
       generateDefaultConfiguration(configFile.c_str());
 
-      cout << "Done." << endl;
+      cout << "Done." << endl << "You can now edit and customize this file." << endl;
+
       return -1;
     }
     else if (std::string(argv[1]) == "--list-resources") {
@@ -494,17 +509,18 @@ int main(int argc, char *argv[]) {
         make_endpoint(getString(cfg, "RA-ip"),
                       static_cast<PortNumberType>(getInt(cfg, "RA-port"))),
         make_endpoint(getString(cfg, "GA-ip"),
-                      static_cast<PortNumberType>(getInt(cfg, "GA-port"))));
+                      static_cast<PortNumberType>(getInt(cfg, "GA-port"))),
+        getBool(cfg, "debug-mode"));
     //instantiate our main class, with the parameters as set by the user in the config file
 
     io_service.run();
     // run asio's event-loop; used for asynchronous network IO using coroutines
 
 
-  } catch (std::runtime_error e) {
-    std::cout << "Config error: '" << e.what() << "' missing" << std::endl;
+  } catch (std::runtime_error& e) {
+    std::cout << "Exception: '" << e.what() << std::endl;
     return -1;
-  } catch (std::out_of_range e) {
+  } catch (std::out_of_range& e) {
     std::cout << "Config error - unknown resource type: "
               << getString(cfg, "resource-type") << std::endl;
     return -1;

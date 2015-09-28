@@ -57,6 +57,13 @@ int getInt(rapidjson::Document& d,const char *name) {
   throw std::runtime_error(name);
 }
 
+bool getBool(rapidjson::Document& d,const char *name) {
+  auto itr = d.FindMember(name);
+  if (itr != d.MemberEnd())
+    return itr->value.GetBool();
+  throw std::runtime_error(name);
+}
+
 // Helper function to parse JSON with runtime exceptions
 std::string getString(rapidjson::Document& d,const char *name) {
   auto itr = d.FindMember(name);

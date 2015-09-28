@@ -2,6 +2,7 @@
 #define SENDERPOLICIES_H
 
 #include <vector>
+#include <algorithm>
 #include <stdexcept>
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
@@ -10,6 +11,7 @@
 #include <commelec-api/serialization.hpp>
 #include <commelec-api/schema.capnp.h>
 #include <commelec-api/asio-kj-interop.hpp>
+#include <commelec-api/adv-validation.hpp>
 
 //######################################################################
 // Packed vs unpacked serialization (policy classes)
@@ -19,7 +21,7 @@ struct PackedSerialization {
   inline void serializeAndAsyncSend(capnp::MallocMessageBuilder &builder,
                              boost::asio::ip::udp::socket &socket,
                              boost::asio::ip::udp::endpoint endpoint,
-                             boost::asio::yield_context yield) {
+                             boost::asio::yield_context yield, bool debug = false) {
     std::vector<uint8_t> packedDataBuffer(messageByteSize(builder));
     // buffer to hold the packed advertisement
     // ( messageByteSize(msg) is a crude upper bound for the buffer size.
@@ -27,6 +29,12 @@ struct PackedSerialization {
 
     writePackedMessage(packedDataBuffer, builder);
     // will resize packedDataBuffer to the exact size of the packed data
+    
+    if (debug)
+    {
+      auto buf = boost::asio::const_buffer(boost::asio::buffer(packedDataBuffer));
+      AdvValidator<PackedSerialization> val(buf);
+    }
 
     auto bytesWritten = socket.async_send_to(
         boost::asio::buffer(packedDataBuffer), endpoint, yield);
@@ -58,13 +66,29 @@ struct NonPackedSerialization {
   // serialize data and send it over UDP (packing is omitted)
   inline void serializeAndAsyncSend(capnp::MallocMessageBuilder &builder,
                              boost::asio::ip::udp::socket &socket, boost::asio::ip::udp::endpoint endpoint,
-                             boost::asio::yield_context yield) {
+                             boost::asio::yield_context yield, bool debug = false) {
     AsioKJOutBufferAdapter adapter;
     writeMessage(adapter, builder);
-    // no data is copied, instead, a list of tuples (pointer to data, data size)
+    // almost no data is copied (except the first segment), instead, a list of tuples (pointer to data, data size)
     // is created, which async_send_to can use as a "scatter-gatter" buffer
     // (i.e., a buffer that consist of several sub-buffers at various memory
     // locations)
+
+    if (debug) {
+      // Copy data into a vector and re-interpret this data as an advertisement
+      // and verify the validity
+      std::vector<uint8_t> tmpBuf;
+      tmpBuf.reserve(adapter.totalSize());
+
+      auto iterBegin = buffers_begin(adapter.get_buffer_sequence());
+      auto iterEnd = buffers_end(adapter.get_buffer_sequence());
+
+      tmpBuf.assign(iterBegin, iterEnd);
+
+      auto asio_buf = boost::asio::buffer(tmpBuf);
+      auto const_asio_buf = boost::asio::const_buffer(asio_buf);
+      AdvValidator<NonPackedSerialization> val(const_asio_buf);
+    }
 
     auto bytesWritten =
         socket.async_send_to(adapter.get_buffer_sequence(), endpoint, yield);

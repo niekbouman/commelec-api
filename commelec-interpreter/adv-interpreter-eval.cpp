@@ -5,12 +5,14 @@
 using namespace msg;
 
 double AdvFunc::evaluate(RealExpr::Reader expr, const ValueMap &bound_vars) {
+  assert(_advValid);
   _bound_vars = &bound_vars;
   _nesting_depth = 0;
   return eval(expr);
 }
 
 double AdvFunc::evalPartialDerivative(RealExpr::Reader expr,std::string diffVariable , const ValueMap &bound_vars) {
+  assert(_advValid);
   _bound_vars = &bound_vars;
   _nesting_depth = 0;
   return evalPartialDerivative(expr, diffVariable);

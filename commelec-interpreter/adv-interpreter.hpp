@@ -95,6 +95,15 @@ struct AdvFunc
 
   AdvFunc(msg::Advertisement::Reader adv);
 
+  AdvFunc(): _advValid(false) {};
+
+  void setAdv(msg::Advertisement::Reader adv)
+  {
+    _adv = adv;
+    _advValid = true;
+    findReferences();
+  };
+
   // Top-level user functions:
   bool testMembership(msg::SetExpr::Reader set, PointTypePP point, const ValueMap &bound_vars);
   double evaluate(msg::RealExpr::Reader, const ValueMap &bound_vars);
@@ -104,6 +113,7 @@ struct AdvFunc
   Eigen::Vector2d project(msg::SetExpr::Reader set,
                           const Eigen::MatrixBase<Derived> &point,
                           const ValueMap &bound_vars) {
+    assert(_advValid);
     _bound_vars = &bound_vars;
     _nesting_depth = 0;
     return proj(set, point);
@@ -549,6 +559,7 @@ private:
   void findReferences(msg::RealExpr::Reader expr);
   void findReferences(msg::SetExpr::Reader expr);
 
+  bool _advValid;
   int _nesting_depth;
   msg::Advertisement::Reader _adv;
   const ValueMap* _bound_vars;

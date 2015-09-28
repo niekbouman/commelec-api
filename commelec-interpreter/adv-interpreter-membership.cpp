@@ -12,6 +12,7 @@ bool AdvFunc::membership(SetExpr::Reader set, PointTypePP pt)
 
 bool AdvFunc::testMembership(SetExpr::Reader set, PointTypePP point,
                     const ValueMap &bound_vars) {
+  assert(_advValid);
   _bound_vars = &bound_vars;
   _nesting_depth = 0;
   return membership(set, point);

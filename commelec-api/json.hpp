@@ -8,6 +8,7 @@ rapidjson::Document readJSONstdin();
 void writeJSONfile(const char *configFile, rapidjson::Document &d);
 
 int getInt(rapidjson::Document &d, const char *name);
+bool getBool(rapidjson::Document &d, const char *name);
 std::string getString(rapidjson::Document &d, const char *name);
 // Helper functions to parse JSON with runtime exceptions
 

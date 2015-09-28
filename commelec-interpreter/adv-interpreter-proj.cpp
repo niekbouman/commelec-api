@@ -4,6 +4,7 @@ using namespace msg;
 
 PointType AdvFunc::project(SetExpr::Reader set, PointTypePP point, const ValueMap &bound_vars)
 {
+  assert(_advValid);
   _bound_vars = &bound_vars;
   _nesting_depth = 0;
   return proj(set,point);

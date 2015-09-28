@@ -18,7 +18,7 @@ target_link_libraries(hlapi ${CAPNP_LIBRARIES_LITE} ${EXTRA_LIBS} ${Boost_LIBRAR
 target_link_libraries(hlapi_static ${CAPNP_LIBRARIES_LITE} ${EXTRA_LIBS} ${Boost_LIBRARIES})
 
 add_executable(commelecd daemon.cpp json.cpp)
-target_link_libraries(commelecd ${EXTRA_LIBS} ${CAPNP_LIBRARIES_LITE} ${Boost_LIBRARIES} hlapi_static)
+target_link_libraries(commelecd ${EXTRA_LIBS} ${CAPNP_LIBRARIES_LITE} ${Boost_LIBRARIES} hlapi_static cl_interpreter)
 
 set(CAPNP_SRCS "${CAPNP_SRCS}" PARENT_SCOPE)
 set(CAPNP_HDRS "${CAPNP_HDRS}" PARENT_SCOPE)

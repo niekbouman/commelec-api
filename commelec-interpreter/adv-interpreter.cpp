@@ -43,6 +43,7 @@ Eigen::MatrixXd AdvFunc::evalToMatrix(capnp::List<capnp::List<RealExpr>>::Reader
 }
 
 Eigen::AlignedBoxXd AdvFunc::rectangularHull(SetExpr::Reader set, const ValueMap &bound_vars){
+  assert(_advValid);
   _bound_vars = &bound_vars;
   _nesting_depth = 0;
   return rectHull(set);
