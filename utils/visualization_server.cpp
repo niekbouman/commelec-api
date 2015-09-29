@@ -24,8 +24,36 @@
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
 
+#include<cmath>
+
 #include <Eigen/Core> 
 using boost::asio::ip::tcp;
+
+/*
+struct NaNCompare {
+  bool operator() (double a, double b) const {
+    if ((a == a) && (b == b)) {
+      return a < b;
+    }
+    if ((a != a) && (b != b))
+      return false;
+    // We have one NaN and one non-NaN.
+    // Let's say NaN is less than everything
+    return (a != a);
+  }
+};
+
+bool nanEq(double a, double b) {
+    if ((a == a) && (b == b)) {
+      return a == b;
+    }
+    if (std::isnan(a) && std::isnan(b))
+      return true;
+    return false;
+}
+
+using NaNAllowedSet = std::set<double,NaNCompare>;
+*/
 
 struct header_t {
   uint32_t jsonLen;
@@ -108,7 +136,10 @@ public:
                     rapidjson::Document::AllocatorType &allocator) {
 
     // apply runlength compression to a matrix and output the compressed matrix
-    // as a json array:
+    // as a json array.
+    //
+    // Furthermore, since JSON cannot express NaN values (IEEE floating point not-a-number),
+    // we use -1.0 for this. If the cost function happens to evaluate to -1.0, we replace that value by -1.0+eps
     //
     // example:
     // compressVals = {NaN}
@@ -119,34 +150,50 @@ public:
     //
     // Output (json)
     //
-    // {[NaN, 2, 1.0, 2.0]}
+    // {[-1.0, 2, 1.0, 2.0]}
 
     using namespace rapidjson;
     Value result(kArrayType);
 
     size_t totalDim = m.rows() * m.cols();
-    auto data = m.data();
+    const double* data = m.data();
 
     int i = 0;
     int count = 0;
     double activeVal;
+    //double outVal;
 
     while (i < totalDim) {
-      auto datum = data[i];
+      auto datum = data[i++];
+
+      if (datum == -1.0)
+          datum +=std::numeric_limits<double>::epsilon();
+      else if (std::isnan(datum))
+          datum = -1.0;
+          //outVal = datum + 5; 
 
       if (count > 0) {
-        if (datum == activeVal) {
+        //if (nanEq(datum,activeVal)) { 
+        if (datum==activeVal) { 
           ++count;
           continue;
         } else {
           result.PushBack(Value().SetDouble(activeVal), allocator);
           result.PushBack(Value().SetInt(count), allocator);
-          result.PushBack(Value().SetDouble(datum), allocator);
+          --i; // rewind
           count = 0;
           continue;
         }
       } else if (compressVals.count(datum)) {
         activeVal = datum;
+        /*
+        if (std::isnan(datum))
+          outVal = -1.0;
+        else if (datum == -1.0)
+          outVal = datum + 5; //std::numeric_limits<double>::epsilon();
+        else
+          outVal = datum;
+          */
         count = 1;
         continue;
       } else
@@ -192,6 +239,11 @@ public:
     } else if (request.HasMember("dimP") && request.HasMember("dimQ")) {
       p.setLinSpaced(request["dimP"].GetInt(), min(0), max(0));
       q.setLinSpaced(request["dimQ"].GetInt(), min(1), max(1));
+
+
+//std::cout<< "p points " << p << std::endl;
+//std::cout<< "q points " << q << std::endl;
+
     } else {
       // specify dim or res
       return;
@@ -201,13 +253,18 @@ public:
     Eigen::MatrixXd rasterizedCF(
         evalFunOnPQDomain(adv.getCostFunction(), pqProf, interpreter, p, q));
 
+//rasterizedCF.topLeftCorner(3,3).setOnes();
+//rasterizedCF.topLeftCorner(3,3).array()*=-1;//.setOnes();
+//rasterizedCF.bottomRightCorner(1,1).setZero();
+//std::cout<< "data: " << std::endl << rasterizedCF << std::endl;
+
     // apply runlength compression to the elements NaN and zero (it is expected
     // that there will be many 'burst' patters of both elements, hence runlength
     // compression makes sense here)
     auto& allocator = response.GetAllocator();
     auto compressedM(runlengthCompress(
         rasterizedCF,
-        {static_cast<double>(0), std::numeric_limits<double>::quiet_NaN()},
+        {static_cast<double>(0), static_cast<double>(-1)}, //std::numeric_limits<double>::quiet_NaN()},
         allocator));
 
     rapidjson::Value cf(rapidjson::kObjectType);
@@ -238,19 +295,32 @@ public:
           // json array for reporting errors back to the client
 
           // read header (contains length)
-          header_t header;
+          header_t header_network_byte_order;
           boost::asio::async_read(
-              socket_, boost::asio::buffer(&header, sizeof(header)), yield);
+              socket_, boost::asio::buffer(&header_network_byte_order, sizeof(header_t)), yield);
+
+
+          header_t header_native_byte_order;
+
+          header_native_byte_order.jsonLen = boost::asio::detail::socket_ops::network_to_host_long(header_network_byte_order.jsonLen);
+
+          header_native_byte_order.capnpLen = boost::asio::detail::socket_ops::network_to_host_long(header_network_byte_order.capnpLen);
+
+//std::cout<< "received packet" << std::endl;
+//std::cout<< "header jsonlen:" << header_native_byte_order.jsonLen << std::endl;
+//std::cout<< "header capnpLen:" << header_native_byte_order.capnpLen << std::endl;
 
           // read payload
-          jsonData.resize(header.jsonLen); // increase buffer size if necessary
+          jsonData.resize(header_native_byte_order.jsonLen); // increase buffer size if necessary
           boost::asio::async_read(socket_, boost::asio::buffer(const_cast<char*>(jsonData.data()),jsonData.size()),
                                   yield);
           Document jsonRequest;
           jsonRequest.Parse(jsonData.c_str());
 
+//std::cout<< "jsondata " << jsonData.c_str() << std::endl;
+
           capnpData.resize(
-              header.capnpLen); // increase buffer size if necessary
+              header_native_byte_order.capnpLen); // increase buffer size if necessary
           auto asio_buffer = boost::asio::buffer(capnpData);
           boost::asio::async_read(socket_, asio_buffer, yield);
           CapnpReader reader(asio_buffer);
@@ -268,32 +338,44 @@ public:
 
  
           // serialize to json
-          if (errors.MemberCount() > 0)
-          {
-            // add errors to json object if there were any
-            jsonReply.AddMember("errors", errors, jsonReply.GetAllocator());
-          }
+       //   if (errors.MemberCount() > 0)
+       //   {
+       //     // add errors to json object if there were any
+       //     jsonReply.AddMember("errors", errors, jsonReply.GetAllocator());
+       //   }
 
           StringBuffer buffer;
           Writer<StringBuffer> writer(buffer);
           jsonReply.Accept(writer);
           std::string payload { buffer.GetString() };
 
+
+
           uint32_t len = payload.size();
-          std::string lenHeader{sizeof(len), '0'};
+//std::cout<< "return payload (size: " << len <<")"<< std::endl << payload << std::endl;
+          //std::string lenHeader{sizeof(uint32_t), '0'};
           // initialize string with the right length (the '0' char is an
           // arbitrary choice)
 
-          auto headerPtr = const_cast<decltype(len) *>(
-              reinterpret_cast<const decltype(len) *>(lenHeader.data()));
+          //auto headerPtr = const_cast<uint32_t*>(
+          //    reinterpret_cast<const uint32_t*>(lenHeader.data()));
           // make (non-const) pointer to string-data
 
           using ::boost::asio::detail::socket_ops::host_to_network_long;
-          *headerPtr = host_to_network_long(len);
+          //*headerPtr = host_to_network_long(len);
+          uint32_t tmp =host_to_network_long(len); 
+          std::string lenHeader;
+
+          auto *tmpPtr = reinterpret_cast<char*>(&tmp);
+
+          for (int i =0 ; i<4 ;++i)
+            lenHeader.push_back(tmpPtr[i]);
+
           // write length in network-order (big-endian) to string
 
+          auto outbuf = lenHeader + payload;
           boost::asio::async_write(
-              socket_, boost::asio::buffer(lenHeader + payload), yield);
+              socket_, boost::asio::buffer(outbuf), yield);
         }
       } catch (std::exception &e) {
         socket_.close();
