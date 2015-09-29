@@ -3,7 +3,7 @@
 
 using namespace msg;
 
-AdvFunc::AdvFunc(Advertisement::Reader adv) : _adv(adv)
+AdvFunc::AdvFunc(Advertisement::Reader adv) : _adv(adv), _advValid(true) 
 {
   findReferences();
   // populates _real_expr_refs and _set_expr_refs

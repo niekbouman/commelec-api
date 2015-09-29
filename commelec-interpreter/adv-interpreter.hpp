@@ -559,9 +559,9 @@ private:
   void findReferences(msg::RealExpr::Reader expr);
   void findReferences(msg::SetExpr::Reader expr);
 
-  bool _advValid;
   int _nesting_depth;
   msg::Advertisement::Reader _adv;
+  bool _advValid;
   const ValueMap* _bound_vars;
   RealExprRefMap _real_expr_refs;
   SetExprRefMap _set_expr_refs;
