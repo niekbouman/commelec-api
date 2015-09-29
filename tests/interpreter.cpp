@@ -8,7 +8,7 @@
 
 const lest::test specification[] =
 {
-  CASE("Evaluation of a RealExpr")
+  {CASE( "Evaluation of a RealExpr" )
   {
 
     // Build a message
@@ -33,8 +33,9 @@ const lest::test specification[] =
 
     EXPECT( std::abs(interpreter.evaluate(expr,{{"X",b},{"Y",c}}) - (a * b + std::sin(c))) < 1e-8);
 
-  },
-  CASE("Testing evaluation and differentiation of a polynomial-like expression")
+  }},
+
+  {CASE( "Testing evaluation and differentiation of a polynomial-like expression" )
   {
 
     // Build a message
@@ -72,7 +73,7 @@ const lest::test specification[] =
     EXPECT(newInterpreter.evaluate(expr2,{{"P",3},{"Q",5}})==1134);
     EXPECT(newInterpreter.evalPartialDerivative(expr2,"P",{{"P",2},{"Q",3}})==85);
 
-  },
+  }},
 };
 
 int main( int argc, char * argv[] )
