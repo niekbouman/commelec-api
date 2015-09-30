@@ -49,6 +49,12 @@ include_directories ("${PROJECT_SOURCE_DIR}/externals/spdlog/include")
 include_directories ("${PROJECT_SOURCE_DIR}/externals") 
 
 add_subdirectory(commelec-api)
+# commelec-api compiles the Cap'n Proto schema automatically
+set(CAPNP_SRCS "${CAPNP_SRCS}")
+set(CAPNP_HDRS "${CAPNP_HDRS}")
+set_source_files_properties(${CAPNP_SRCS} PROPERTIES GENERATED TRUE)
+# redefine with correct scope
+
 add_subdirectory(externals/seidel_lp)
 add_subdirectory(commelec-interpreter)
 add_subdirectory(utils)
