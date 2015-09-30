@@ -84,8 +84,8 @@ def readbytes(sock, length):
 def main():
 
     res = 100
-    Ppixels = 320
-    Qpixels = 300
+    Ppixels = 64
+    Qpixels = 64
     # resolution of the plot
 
     listenPort = 12345
@@ -112,14 +112,11 @@ def main():
         data, addr = udpsock.recvfrom(1<<16)
         # receive Cap'n Proto advertisement on the UDP socket
 
-        mydata = makeHeader(len(jsnReq), len(data)) +jsnReq+data
-
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((vizHost, vizPort))
         # connect to viz-server
 
-
-        s.sendall(mydata)
+        s.sendall(makeHeader(len(jsnReq), len(data)) + jsnReq + data)
         # forward render request + capnp-advertisement to viz-server
         # (over TCP)
 
@@ -132,16 +129,23 @@ def main():
        
         s.close()
 
-        uncData = uncompress(response['cf']['data'])
-        # uncompress matrix-data
+        # check for errors
+        if 'errors' in response.keys():
+            print 'Errors occurred!'
+            for err in response['errors']:
+                print '[code: %d]' % err['code'], err['msg'] 
 
-        M = np.array(uncData).reshape((Qpixels,Ppixels))
-        # reshape into a numpy array
+        else:
+            uncData = uncompress(response['cf']['data'])
+            # uncompress matrix-data
 
-        plt.imshow(np.flipud(M.transpose()))
-        plt.draw()
-        # plot M
+            M = np.array(uncData).reshape((Qpixels,Ppixels))
+            # reshape into a numpy array
+
+            plt.imshow(np.flipud(M.transpose()))
+            plt.draw()
+            # plot M
    
-# this only runs if the module was *not* imported
+# this only runs if the module was not imported
 if __name__ == "__main__":
     main()

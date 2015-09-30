@@ -27,36 +27,10 @@
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
 
-#include<cmath>
+#include <cmath>
 
 #include <Eigen/Core> 
 using boost::asio::ip::tcp;
-
-/*
-struct NaNCompare {
-  bool operator() (double a, double b) const {
-    if ((a == a) && (b == b)) {
-      return a < b;
-    }
-    if ((a != a) && (b != b))
-      return false;
-    // We have one NaN and one non-NaN.
-    // Let's say NaN is less than everything
-    return (a != a);
-  }
-};
-
-bool nanEq(double a, double b) {
-    if ((a == a) && (b == b)) {
-      return a == b;
-    }
-    if (std::isnan(a) && std::isnan(b))
-      return true;
-    return false;
-}
-
-using NaNAllowedSet = std::set<double,NaNCompare>;
-*/
 
 struct header_t {
   uint32_t jsonLen;
@@ -70,7 +44,7 @@ class TCPSession : public std::enable_shared_from_this<TCPSession<>>,
   using typename PackingPolicy::CapnpReader;
 
 public:
-  enum class ErrorCode : int { not_an_advertisement = 1 };
+  enum class ErrorCode : int { capnproto_payload_invalid = 1, not_an_advertisement = 2 };
 
   explicit TCPSession(tcp::socket socket)
       : socket_(std::move(socket)), timer_(socket_.get_io_service()),
@@ -116,11 +90,7 @@ public:
     auto dimP = evalPointsP.size();
     auto dimQ = evalPointsQ.size();
 
-//std::cout<< "start eval: " << dimP << "," << dimQ  << std::endl;
-
     Eigen::MatrixXd result(dimP, dimQ);
-
-//std::cout<< "alloc"<< std::endl;
 
     double nan = std::numeric_limits<double>::quiet_NaN();
 
@@ -168,7 +138,6 @@ public:
     int i = 0;
     int count = 0;
     double activeVal;
-    //double outVal;
 
     while (i < totalDim) {
       auto datum = data[i++];
@@ -177,10 +146,8 @@ public:
           datum +=std::numeric_limits<double>::epsilon();
       else if (std::isnan(datum))
           datum = -1.0;
-          //outVal = datum + 5; 
 
       if (count > 0) {
-        //if (nanEq(datum,activeVal)) { 
         if (datum==activeVal) { 
           ++count;
           continue;
@@ -193,14 +160,6 @@ public:
         }
       } else if (compressVals.count(datum)) {
         activeVal = datum;
-        /*
-        if (std::isnan(datum))
-          outVal = -1.0;
-        else if (datum == -1.0)
-          outVal = datum + 5; //std::numeric_limits<double>::epsilon();
-        else
-          outVal = datum;
-          */
         count = 1;
         continue;
       } else
@@ -246,11 +205,6 @@ public:
     } else if (request.HasMember("dimP") && request.HasMember("dimQ")) {
       p.setLinSpaced(request["dimP"].GetInt(), min(0), max(0));
       q.setLinSpaced(request["dimQ"].GetInt(), min(1), max(1));
-
-
-//std::cout<< "p points " << p << std::endl;
-//std::cout<< "q points " << q << std::endl;
-
     } else {
       // specify dim or res
       return;
@@ -260,14 +214,6 @@ public:
     Eigen::MatrixXd rasterizedCF(
         evalFunOnPQDomain(adv.getCostFunction(), pqProf, interpreter, p, q));
 
-
-
-//std::cout<< "rastering done " << q << std::endl;
-//rasterizedCF.topLeftCorner(3,3).setOnes();
-//rasterizedCF.topLeftCorner(3,3).array()*=-1;//.setOnes();
-//rasterizedCF.bottomRightCorner(1,1).setZero();
-//std::cout<< "data: " << std::endl << rasterizedCF << std::endl;
-
     // apply runlength compression to the elements NaN and zero (it is expected
     // that there will be many 'burst' patters of both elements, hence runlength
     // compression makes sense here)
@@ -276,8 +222,6 @@ public:
         rasterizedCF,
         {static_cast<double>(0), static_cast<double>(-1)}, //std::numeric_limits<double>::quiet_NaN()},
         allocator));
-
-//std::cout<< "compression done " << q << std::endl;
 
     rapidjson::Value cf(rapidjson::kObjectType);
     cf.AddMember("data",compressedM,allocator);
@@ -311,41 +255,44 @@ public:
           boost::asio::async_read(
               socket_, boost::asio::buffer(&header_network_byte_order, sizeof(header_t)), yield);
 
-
           header_t header_native_byte_order;
 
-          header_native_byte_order.jsonLen = boost::asio::detail::socket_ops::network_to_host_long(header_network_byte_order.jsonLen);
+          header_native_byte_order.jsonLen =
+              boost::asio::detail::socket_ops::network_to_host_long(
+                  header_network_byte_order.jsonLen);
 
-          header_native_byte_order.capnpLen = boost::asio::detail::socket_ops::network_to_host_long(header_network_byte_order.capnpLen);
-
-          // std::cout<< "received packet" << std::endl;
-          // std::cout<< "header jsonlen:" << header_native_byte_order.jsonLen
-          // << std::endl;
-          // std::cout<< "header capnpLen:" << header_native_byte_order.capnpLen
-          // << std::endl;
+          header_native_byte_order.capnpLen =
+              boost::asio::detail::socket_ops::network_to_host_long(
+                  header_network_byte_order.capnpLen);
 
           // read payload
           jsonData.resize(header_native_byte_order.jsonLen); // increase buffer size if necessary
-          boost::asio::async_read(socket_, boost::asio::buffer(const_cast<char*>(jsonData.data()),jsonData.size()),
-                                  yield);
+          boost::asio::async_read(
+              socket_, boost::asio::buffer(const_cast<char *>(jsonData.data()),
+                                           jsonData.size()),
+              yield);
           Document jsonRequest;
           jsonRequest.Parse(jsonData.c_str());
 
-          // std::cout<< "jsondata " << jsonData.c_str() << std::endl;
-
-          capnpData.resize(
-              header_native_byte_order.capnpLen); // increase buffer size if necessary
+          capnpData.resize(header_native_byte_order.capnpLen); 
+          // increase buffer size if necessary
           auto asio_buffer = boost::asio::buffer(capnpData);
           boost::asio::async_read(socket_, asio_buffer, yield);
 
-          // TODO: does asiobuffer have proper length?
-          CapnpReader reader(asio_buffer);
+          msg::Message::Reader msg;
+          try {
+            CapnpReader reader(asio_buffer);
+            capnp::MallocMessageBuilder noTraversalLimit;
+            noTraversalLimit.setRoot(reader.getMessage());
+            msg = noTraversalLimit.getRoot<msg::Message>().asReader();
 
-          capnp::MallocMessageBuilder noTraversalLimit;
-          noTraversalLimit.setRoot(reader.getMessage());
-          auto msg = noTraversalLimit.getRoot<msg::Message>().asReader();
+          } catch (const std::exception &e) {
+            addError(errors, jsonReply.GetAllocator(),
+                     ErrorCode::capnproto_payload_invalid,
+                     (std::string("capnproto payload invalid: ") + e.what()).c_str());
+            goto proceed;
+          }
 
-          //msg::Message::Reader msg = reader.getMessage();
           if (!msg.hasAdvertisement()) {
             // capnproto msg is not an advertisement
 
@@ -356,53 +303,32 @@ public:
             renderCostFunction(jsonRequest,jsonReply,msg.getAdvertisement());
           }
 
-          // std::cout<< "rendering done "  << std::endl;
- 
+proceed:
           // serialize to json
-          //   if (errors.MemberCount() > 0)
-          //   {
-          //     // add errors to json object if there were any
-          //     jsonReply.AddMember("errors", errors,
-          //     jsonReply.GetAllocator());
-          //   }
+          if (errors.Size() > 0)
+          {
+            // add errors to json object if there were any
+            jsonReply.AddMember("errors", errors,
+            jsonReply.GetAllocator());
+          }
 
           StringBuffer buffer;
           Writer<StringBuffer> writer(buffer);
           jsonReply.Accept(writer);
           std::string payload { buffer.GetString() };
 
-          // std::cout<< "created payload "  << std::endl;
-
           uint32_t len = payload.size();
-          // std::cout<< "return payload (size: " << len <<")"<< std::endl <<
-          // payload << std::endl;
-          //std::string lenHeader{sizeof(uint32_t), '0'};
-          // initialize string with the right length (the '0' char is an
-          // arbitrary choice)
-
-          //auto headerPtr = const_cast<uint32_t*>(
-          //    reinterpret_cast<const uint32_t*>(lenHeader.data()));
-          // make (non-const) pointer to string-data
-
           using ::boost::asio::detail::socket_ops::host_to_network_long;
-          //*headerPtr = host_to_network_long(len);
           uint32_t tmp =host_to_network_long(len); 
           std::string lenHeader;
-
           auto *tmpPtr = reinterpret_cast<char*>(&tmp);
-
           for (int i =0 ; i<4 ;++i)
             lenHeader.push_back(tmpPtr[i]);
-
           // write length in network-order (big-endian) to string
+          
+          auto outbuf = lenHeader + payload;
           boost::asio::async_write(
-              socket_, boost::asio::buffer(lenHeader), yield);
-
-          //std::cout << "written length: " << len << std::endl;
-
-          //        auto outbuf = lenHeader + payload;
-          boost::asio::async_write(
-              socket_, boost::asio::buffer(payload), yield);
+              socket_, boost::asio::buffer(outbuf), yield);
         }
       } catch (std::exception &e) {
         socket_.close();
@@ -427,7 +353,6 @@ public:
 private:
   std::vector<uint8_t> capnpData;
   std::string jsonData;
-
   tcp::socket socket_;
   boost::asio::steady_timer timer_;
   boost::asio::io_service::strand strand_;
@@ -457,15 +382,16 @@ int main(int argc, char* argv[])
             tcp::socket socket(io_service);
             acceptor.async_accept(socket, yield[ec]);
             if (!ec) std::make_shared<TCPSession<>>(std::move(socket))->sessionLoop();
+            // create session
           }
         });
 
     io_service.run();
+    // listen for incoming connections
   }
   catch (std::exception& e)
   {
     std::cerr << "Exception: " << e.what() << "\n";
   }
-
   return 0;
 }
