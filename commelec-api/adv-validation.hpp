@@ -129,7 +129,7 @@ private:
   }
 
   void computeBoundingBoxAroundPQProfile() {
-    PQprofBB = interpreter.rectangularHull(_adv.getPQProfile(), {});
+    PQprofBB = interpreter.rectangularHull(_adv.getPQProfile(), ValueMap{});
     // try to compute axis aligned bounding box around PQ profile
     // this could (or will?) fail if the PQ profile is unbounded
   }
@@ -157,7 +157,7 @@ private:
         // the line above does currently not work, seems to be a bug in Eigen
         // the sample() function is a work-around
         
-    } while (!interpreter.testMembership(PQprof, {randomPoint[0], randomPoint[1]}, {}));
+    } while (!interpreter.testMembership(PQprof, {randomPoint[0], randomPoint[1]}, ValueMap{}));
     return randomPoint;
   }
 
