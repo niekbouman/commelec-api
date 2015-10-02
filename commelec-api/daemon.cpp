@@ -97,9 +97,10 @@ void createUncontrGenAdv(msg::Message::Builder msg, rapidjson::Document &d) {
   auto dQdown = d["dQdown"].GetDouble();
   auto Pimp = d["Pimp"].GetDouble();
   auto Qimp = d["Qimp"].GetDouble();
+  auto maxPowerAbsorbtion = d["PmaxAbsorb"].GetDouble();
 
   _uncontrollableGenerator(msg.initAdvertisement(), Pexp,Qexp, Srated, dPup, dPdown, dQup,
-                      dQdown, Pimp, Qimp);
+                      dQdown, Pimp, Qimp,maxPowerAbsorbtion);
 
   return;
 }

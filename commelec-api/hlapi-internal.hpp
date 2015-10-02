@@ -40,16 +40,18 @@ void _PVAdvertisement(msg::Advertisement::Builder adv, double Srated,
                       double b_pv, double Pimp, double Qimp);
 
 enum class ResourceType { load, generator, bidirectional };
-void _uncontrollableResource(msg::Advertisement::Builder adv, double Pexp, double Qexp, double Srated,
-                         double dPup, double dPdown, double dQup, double dQdown,
-                         double Pimp, double Qimp, ResourceType resType);
+void _uncontrollableResource(msg::Advertisement::Builder adv, double Pexp,
+                             double Qexp, double Srated, double dPup,
+                             double dPdown, double dQup, double dQdown,
+                             double Pimp, double Qimp, ResourceType resType,
+                             double Pgap);
 
 inline void _uncontrollableLoad(msg::Advertisement::Builder adv, double Pexp,
                                 double Qexp, double Srated, double dPup,
                                 double dPdown, double dQup, double dQdown,
                                 double Pimp, double Qimp) {
   _uncontrollableResource(adv, Pexp, Qexp, Srated, dPup, dPdown, dQup, dQdown,
-                          Pimp, Qimp, ResourceType::load);
+                          Pimp, Qimp, ResourceType::load,0.0);
 };
 // Advertisement for an uncontrollable load:
 //   PQ profile = singleton(Pexp,Qexp)
@@ -63,9 +65,9 @@ inline void _uncontrollableLoad(msg::Advertisement::Builder adv, double Pexp,
 inline void _uncontrollableGenerator(msg::Advertisement::Builder adv, double Pexp,
                                 double Qexp, double Srated, double dPup,
                                 double dPdown, double dQup, double dQdown,
-                                double Pimp, double Qimp) {
+                                double Pimp, double Qimp, double Pgap) {
   _uncontrollableResource(adv, Pexp, Qexp, Srated, dPup, dPdown, dQup, dQdown,
-                          Pimp, Qimp, ResourceType::generator);
+                          Pimp, Qimp, ResourceType::generator,Pgap);
 };
 // Advertisement for an uncontrollable generator:
 //   PQ profile = singleton(Pexp, Qexp)

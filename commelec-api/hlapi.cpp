@@ -337,9 +337,11 @@ void _PVAdvertisement(msg::Advertisement::Builder adv, double Srated,
   buildPolynomial(cf.initPolynomial(), -a_pv * Pvar + b_pv * (Qvar ^ 2));
 }
 
-void _uncontrollableResource(msg::Advertisement::Builder adv, double Pexp, double Qexp, double Srated,
-                         double dPup, double dPdown, double dQup, double dQdown,
-                         double Pimp, double Qimp, ResourceType resType) {
+void _uncontrollableResource(msg::Advertisement::Builder adv, double Pexp,
+                             double Qexp, double Srated, double dPup,
+                             double dPdown, double dQup, double dQdown,
+                             double Pimp, double Qimp, ResourceType resType,
+                             double Pgap) {
 
   using namespace cv;
   constexpr auto dim = 2; // dimension of the PQ plane
@@ -382,7 +384,7 @@ void _uncontrollableResource(msg::Advertisement::Builder adv, double Pexp, doubl
     //A << -1, 0;
 
     Eigen::VectorXd b(1);
-    b << 0;
+    b << Pgap;
     cv::buildConvexPolytope(A, b, intsect[2].initConvexPolytope());
   }
 
