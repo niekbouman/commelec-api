@@ -12,11 +12,25 @@
 struct InvalidAdvertisement : public std::runtime_error {
   InvalidAdvertisement(const std::string &msg = "") : std::runtime_error(msg) {}
 };
-struct UninitializedPQProfile: public InvalidAdvertisement {};
-struct UninitializedBeliefFunction: public InvalidAdvertisement {};
-struct UninitializedCostFunction: public InvalidAdvertisement {};
-struct UninitializedImplementedSetpoint: public InvalidAdvertisement {};
-
+struct NotAnAdvertisement : public InvalidAdvertisement {
+  NotAnAdvertisement() : InvalidAdvertisement("Message is not an advertisement") {}
+};
+struct UninitializedPQProfile : public InvalidAdvertisement {
+  UninitializedPQProfile()
+      : InvalidAdvertisement("Uninitialized PQ Profile") {}
+};
+struct UninitializedBeliefFunction : public InvalidAdvertisement {
+  UninitializedBeliefFunction()
+      : InvalidAdvertisement("Uninitialized Belief Function") {}
+};
+struct UninitializedCostFunction : public InvalidAdvertisement {
+  UninitializedCostFunction()
+      : InvalidAdvertisement("Uninitialized Cost Function") {}
+};
+struct UninitializedImplementedSetpoint : public InvalidAdvertisement {
+  UninitializedImplementedSetpoint(const std::string &msg = "")
+      : InvalidAdvertisement("Uninitialized Implemented Setpoint") {}
+};
 enum { cfEvaluations = 100 , bfEvaluations = 100 };
 
 template <typename PackingPolicy>
@@ -44,7 +58,7 @@ public:
     // traversal limit
 
     if (!msg.hasAdvertisement())
-      throw InvalidAdvertisement{};
+      throw NotAnAdvertisement{};
 
     _adv = msg.getAdvertisement();
     interpreter.setAdv(_adv);

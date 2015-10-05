@@ -10,6 +10,7 @@
 #include <commelec-api/sender-policies.hpp>
 #include <commelec-api/json.hpp>
 #include <commelec-api/adv-validation.hpp>
+#include <commelec-api/coroutine-exception.hpp>
 
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
@@ -57,13 +58,13 @@ enum {
 };
 
 void createBattAdv(msg::Message::Builder msg, rapidjson::Document& d) {
-  auto Pmin = d["Pmin"].GetDouble();
-  auto Pmax = d["Pmax"].GetDouble();
-  auto Srated = d["Srated"].GetDouble();
-  auto coeffP = d["coeffP"].GetDouble();
-  auto coeffPsquared = d["coeffPsquared"].GetDouble();
-  auto Pimp = d["Pimp"].GetDouble();
-  auto Qimp = d["Qimp"].GetDouble();
+  auto Pmin = getDouble(d,"Pmin");
+  auto Pmax = getDouble(d,"Pmax");
+  auto Srated = getDouble(d,"Srated");
+  auto coeffP = getDouble(d,"coeffP");
+  auto coeffPsquared = getDouble(d,"coeffPsquared");
+  auto Pimp = getDouble(d,"Pimp");
+  auto Qimp = getDouble(d,"Qimp");
 
   _BatteryAdvertisement(msg.initAdvertisement(), Pmin, Pmax, Srated, coeffP,
                         coeffPsquared, 0.0, Pimp, Qimp);
@@ -71,15 +72,15 @@ void createBattAdv(msg::Message::Builder msg, rapidjson::Document& d) {
 }
 
 void createUncontrLoadAdv(msg::Message::Builder msg, rapidjson::Document &d) {
-  auto Srated = d["Srated"].GetDouble();
-  auto Pexp = d["Pexp"].GetDouble();
-  auto Qexp = d["Qexp"].GetDouble();
-  auto dPup = d["dPup"].GetDouble();
-  auto dPdown = d["dPdown"].GetDouble();
-  auto dQup = d["dQup"].GetDouble();
-  auto dQdown = d["dQdown"].GetDouble();
-  auto Pimp = d["Pimp"].GetDouble();
-  auto Qimp = d["Qimp"].GetDouble();
+  auto Srated = getDouble(d,"Srated");
+  auto Pexp = getDouble(d,"Pexp");
+  auto Qexp = getDouble(d,"Qexp");
+  auto dPup = getDouble(d,"dPup");
+  auto dPdown = getDouble(d,"dPdown");
+  auto dQup = getDouble(d,"dQup");
+  auto dQdown = getDouble(d,"dQdown");
+  auto Pimp = getDouble(d,"Pimp");
+  auto Qimp = getDouble(d,"Qimp");
 
   _uncontrollableLoad(msg.initAdvertisement(), Pexp,Qexp, Srated, dPup, dPdown, dQup,
                       dQdown, Pimp, Qimp);
@@ -88,16 +89,16 @@ void createUncontrLoadAdv(msg::Message::Builder msg, rapidjson::Document &d) {
 }
 
 void createUncontrGenAdv(msg::Message::Builder msg, rapidjson::Document &d) {
-  auto Srated = d["Srated"].GetDouble();
-  auto Pexp = d["Pexp"].GetDouble();
-  auto Qexp = d["Qexp"].GetDouble();
-  auto dPup = d["dPup"].GetDouble();
-  auto dPdown = d["dPdown"].GetDouble();
-  auto dQup = d["dQup"].GetDouble();
-  auto dQdown = d["dQdown"].GetDouble();
-  auto Pimp = d["Pimp"].GetDouble();
-  auto Qimp = d["Qimp"].GetDouble();
-  auto maxPowerAbsorbtion = d["PmaxAbsorb"].GetDouble();
+  auto Srated = getDouble(d,"Srated");
+  auto Pexp = getDouble(d,"Pexp");
+  auto Qexp = getDouble(d,"Qexp");
+  auto dPup = getDouble(d,"dPup");
+  auto dPdown = getDouble(d,"dPdown");
+  auto dQup = getDouble(d,"dQup");
+  auto dQdown = getDouble(d,"dQdown");
+  auto Pimp = getDouble(d,"Pimp");
+  auto Qimp = getDouble(d,"Qimp");
+  auto maxPowerAbsorbtion = getDouble(d,"PmaxAbsorb");
 
   _uncontrollableGenerator(msg.initAdvertisement(), Pexp,Qexp, Srated, dPup, dPdown, dQup,
                       dQdown, Pimp, Qimp,maxPowerAbsorbtion);
@@ -108,18 +109,18 @@ void createUncontrGenAdv(msg::Message::Builder msg, rapidjson::Document &d) {
 
 
 void createDiscreteAdv(msg::Message::Builder msg, rapidjson::Document &d) {
-  auto Pmin = d["Pmin"].GetDouble();
-  auto Pmax = d["Pmax"].GetDouble();
-  auto error = d["error"].GetDouble();
+  auto Pmin = getDouble(d,"Pmin");
+  auto Pmax = getDouble(d,"Pmax");
+  auto error = getDouble(d,"error");
 
   std::vector<double> points;
   auto &pointList = d["points"];
   for (auto itr = pointList.Begin(); itr != pointList.End(); ++itr)
     points.push_back(itr->GetDouble());
 
-  auto coeffP = d["coeffP"].GetDouble();
-  auto coeffPsquared = d["coeffPsquared"].GetDouble();
-  auto Pimp = d["Pimp"].GetDouble();
+  auto coeffP = getDouble(d,"coeffP");
+  auto coeffPsquared = getDouble(d,"coeffPsquared");
+  auto Pimp = getDouble(d,"Pimp");
 
   _realDiscreteDeviceAdvertisement(msg.initAdvertisement(), Pmin, Pmax, points,
                                    error, coeffPsquared, coeffP, Pimp);
@@ -127,14 +128,14 @@ void createDiscreteAdv(msg::Message::Builder msg, rapidjson::Document &d) {
 }
 
 void createDiscreteUnifAdv(msg::Message::Builder msg, rapidjson::Document &d) {
-  auto Pmin = d["Pmin"].GetDouble();
-  auto Pmax = d["Pmax"].GetDouble();
-  auto stepsize = d["stepsize"].GetDouble();
-  auto error = d["error"].GetDouble();
+  auto Pmin = getDouble(d,"Pmin");
+  auto Pmax = getDouble(d,"Pmax");
+  auto stepsize = getDouble(d,"stepsize");
+  auto error = getDouble(d,"error");
 
-  auto coeffP = d["coeffP"].GetDouble();
-  auto coeffPsquared = d["coeffPsquared"].GetDouble();
-  auto Pimp = d["Pimp"].GetDouble();
+  auto coeffP = getDouble(d,"coeffP");
+  auto coeffPsquared = getDouble(d,"coeffPsquared");
+  auto Pimp = getDouble(d,"Pimp");
 
   _uniformRealDiscreteDeviceAdvertisement(msg.initAdvertisement(), Pmin, Pmax,
                                           stepsize, error, coeffPsquared,
@@ -147,18 +148,18 @@ void createFuelCellAdv(msg::Message::Builder msg, rapidjson::Document& d) {
 }
 
 void createPVAdv(msg::Message::Builder msg, rapidjson::Document& d) {
-  auto Pmax = d["Pmax"].GetDouble();
-  auto Pdelta = d["Pdelta"].GetDouble();
-  auto Srated = d["Srated"].GetDouble();
+  auto Pmax = getDouble(d,"Pmax");
+  auto Pdelta = getDouble(d,"Pdelta");
+  auto Srated = getDouble(d,"Srated");
 
-  auto cosPhi = d["cosPhi"].GetDouble(); // power factor (PF) = cos(phi)
+  auto cosPhi = getDouble(d,"cosPhi"); // power factor (PF) = cos(phi)
   auto tanPhi = std::sqrt( 1.0 - std::pow(cosPhi,2))/cosPhi; // tan(phi) = sqrt(1 - PF^2) / PF 
 
-  auto a_pv = d["a_pv"].GetDouble();
-  auto b_pv = d["b_pv"].GetDouble();
+  auto a_pv = getDouble(d,"a_pv");
+  auto b_pv = getDouble(d,"b_pv");
 
-  auto Pimp = d["Pimp"].GetDouble();
-  auto Qimp = d["Qimp"].GetDouble();
+  auto Pimp = getDouble(d,"Pimp");
+  auto Qimp = getDouble(d,"Qimp");
 
   _PVAdvertisement(msg.initAdvertisement(), Srated, Pmax, Pdelta, tanPhi, a_pv,
                    b_pv, Pimp, Qimp);
@@ -191,9 +192,11 @@ public:
         logger(spdlog::stdout_logger_mt("console"))
 
   {
-    boost::asio::spawn(_strand,
+    //boost::asio::spawn
+    spawn_coroutine(_strand,
                 [this](boost::asio::yield_context yield) { listenGAside(yield); });
-    boost::asio::spawn(_strand,
+    //boost::asio::spawn
+    spawn_coroutine(_strand,
                 [this](boost::asio::yield_context yield) { listenRAside(yield); });
 
     logger->set_level(spdlog::level::debug);
@@ -300,6 +303,10 @@ private:
         Document d;
         _local_data[bytes_received] = 0; // terminate data as C-string
         d.Parse(reinterpret_cast<const char *>(_local_data));
+
+        if (!d.IsObject())
+          throw std::runtime_error("JSON object invalid");
+
         // parse JSON
 
         auto msg = _builder.initRoot<msg::Message>();
@@ -376,29 +383,28 @@ udp::endpoint make_endpoint(std::string ip, int portnum) {
   return udp::endpoint(boost::asio::ip::address::from_string(ip), portnum);
 }
 
-void generateDefaultConfiguration(const char *configFile){
-      // generate a default configuration and write it to disk
-  
-      rapidjson::Document d;
-      d.SetObject();
-      auto &allocator = d.GetAllocator();
-      // init JSON object
+void generateDefaultConfiguration(const char *configFile) {
+  // generate a default configuration and write it to disk
 
-      d.AddMember("resource-type", "battery", allocator);
-      d.AddMember("agent-id", 1000, allocator);
-      d.AddMember("GA-ip", "127.0.0.1", allocator);
-      d.AddMember("GA-port", 12345, allocator);
-      d.AddMember("RA-ip", "127.0.0.1", allocator);
-      d.AddMember("RA-port", 12342, allocator);
-      d.AddMember("listenport-RA-side", 12340, allocator);
-      d.AddMember("listenport-GA-side", 12341, allocator);
-      d.AddMember("debug-mode", false, allocator);
-      // populate JSON object
+  rapidjson::Document d;
+  d.SetObject();
+  auto &allocator = d.GetAllocator();
+  // init JSON object
 
-      writeJSONfile(configFile, d);
-      // write JSON object to disk
+  d.AddMember("resource-type", "battery", allocator);
+  d.AddMember("agent-id", 1000, allocator);
+  d.AddMember("GA-ip", "127.0.0.1", allocator);
+  d.AddMember("GA-port", 12345, allocator);
+  d.AddMember("RA-ip", "127.0.0.1", allocator);
+  d.AddMember("RA-port", 12342, allocator);
+  d.AddMember("listenport-RA-side", 12340, allocator);
+  d.AddMember("listenport-GA-side", 12341, allocator);
+  d.AddMember("debug-mode", false, allocator);
+  // populate JSON object
+
+  writeJSONfile(configFile, d);
+  // write JSON object to disk
 }
-
 
 int commandLineParser(int argc, char *argv[], std::string& configFile, ResourceMap& resources) {
   // This function handles command line arguments:
@@ -511,8 +517,9 @@ int main(int argc, char *argv[]) {
                       static_cast<PortNumberType>(getInt(cfg, "RA-port"))),
         make_endpoint(getString(cfg, "GA-ip"),
                       static_cast<PortNumberType>(getInt(cfg, "GA-port"))),
-        getBool(cfg, "debug-mode"));
+        getBool(cfg, "debug-mode", false));
     //instantiate our main class, with the parameters as set by the user in the config file
+    // debug-mode is an optional parameter
 
     io_service.run();
     // run asio's event-loop; used for asynchronous network IO using coroutines
@@ -525,6 +532,17 @@ int main(int argc, char *argv[]) {
     std::cout << "Config error - unknown resource type: "
               << getString(cfg, "resource-type") << std::endl;
     return -1;
-  }
+  } catch (const std::exception_ptr &ep)
+  // Exceptions coming from inside coroutines (these are wrapped in an
+  // exception_ptr and have to be rethrown, see below)
+  {
+    try {
+      std::rethrow_exception(ep);
+      // rethrow the exception that the exception pointer points to
+    } catch (const std::exception &e) {
+      std::cout << "Exception occurred!" << std::endl;
+      std::cout << e.what() << std::endl;
+    }
+  } 
 }
 

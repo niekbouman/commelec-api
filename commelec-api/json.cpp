@@ -54,21 +54,38 @@ int getInt(rapidjson::Document& d,const char *name) {
   auto itr = d.FindMember(name);
   if (itr != d.MemberEnd())
     return itr->value.GetInt();
-  throw std::runtime_error(name);
+  throw std::runtime_error( (name+std::string(" field missing in JSON object (datatype: int)")).c_str());
+}
+
+double getDouble(rapidjson::Document& d,const char *name) {
+  auto itr = d.FindMember(name);
+  if (itr != d.MemberEnd())
+    return itr->value.GetDouble();
+//throw std::runtime_error(name);
+
+  throw std::runtime_error( (name+std::string(" field missing in JSON object (datatype: double)")).c_str());
 }
 
 bool getBool(rapidjson::Document& d,const char *name) {
   auto itr = d.FindMember(name);
   if (itr != d.MemberEnd())
     return itr->value.GetBool();
-  throw std::runtime_error(name);
+  throw std::runtime_error((name+std::string(" field missing in JSON object (datatype: boolean)")).c_str());
 }
+
+bool getBool(rapidjson::Document& d,const char *name,bool defaultVal) {
+  auto itr = d.FindMember(name);
+  if (itr != d.MemberEnd())
+    return itr->value.GetBool();
+  else return defaultVal;
+}
+
 
 // Helper function to parse JSON with runtime exceptions
 std::string getString(rapidjson::Document& d,const char *name) {
   auto itr = d.FindMember(name);
   if (itr != d.MemberEnd())
     return itr->value.GetString();
-  throw std::runtime_error(name);
+  throw std::runtime_error((name+std::string(" field missing in JSON object (datatype: string)")).c_str());
 }
 
