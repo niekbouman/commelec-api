@@ -57,8 +57,8 @@ def makeJsonReq(dimP,dimQ):
     Watts per pixel (for P) and VAR per pixel (for Q)
     """
     req = dict()
-    #req['resP'] = 1
-    #req['resQ'] = 1
+    #req['resP'] = .1
+    #req['resQ'] = .1
     req['dimP'] = dimP
     req['dimQ'] = dimQ
     data=json.dumps(req,separators=(',',':'))
@@ -84,8 +84,8 @@ def readbytes(sock, length):
 def main():
 
     res = 100
-    Ppixels = 64
-    Qpixels = 64
+    Ppixels = 50
+    Qpixels = 50
     # resolution of the plot
 
     listenPort = 12345
@@ -139,10 +139,22 @@ def main():
             uncData = uncompress(response['cf']['data'])
             # uncompress matrix-data
 
-            M = np.array(uncData).reshape((Qpixels,Ppixels))
+            dimP = response['cf']['dimP']
+            dimQ = response['cf']['dimQ']
+            M = np.array(uncData).reshape((dimQ,dimP))
             # reshape into a numpy array
 
-            plt.imshow(np.flipud(M.transpose()))
+            extremePoints =[]
+            Qm = response['cf']['originQ']
+            extremePoints.append(Qm)
+            extremePoints.append(Qm+dimQ * response['cf']['resQ'])
+            Pm = response['cf']['originP']
+            extremePoints.append(Pm)
+            extremePoints.append(Pm+dimP * response['cf']['resP'])
+
+            plt.imshow(np.flipud(M.transpose()), extent=extremePoints)
+            plt.xlabel('$Q$ [VAR]')
+            plt.ylabel('$P$ [W]')
             plt.draw()
             # plot M
    

@@ -193,14 +193,20 @@ public:
       auto resP = request["resP"].GetDouble();
       auto resQ = request["resQ"].GetDouble();
 
-      auto minP = resP * std::floor(min(0) / resP);
-      auto maxP = resP * std::ceil(max(0) / resP);
+      auto minPdiv = std::floor(min(0) / resP);
+      auto minP = minPdiv * resP;
+      auto maxPdiv = std::ceil(max(0) / resP);
+      auto maxP = maxPdiv * resP;
+      auto dimP = maxPdiv - minPdiv;
 
-      auto minQ = resQ * std::floor(min(1) / resQ);
-      auto maxQ = resQ * std::ceil(max(1) / resQ);
+      auto minQdiv = std::floor(min(1) / resQ);
+      auto minQ = resQ * minQdiv;
+      auto maxQdiv = std::ceil(max(1) / resQ);
+      auto maxQ = resQ * maxQdiv; 
+      auto dimQ = maxQdiv - minQdiv;
 
-      p.setLinSpaced(resP, minP, maxP);
-      q.setLinSpaced(resQ, minQ, maxQ);
+      p.setLinSpaced(dimP, minP, maxP);
+      q.setLinSpaced(dimQ, minQ, maxQ);
 
     } else if (request.HasMember("dimP") && request.HasMember("dimQ")) {
       p.setLinSpaced(request["dimP"].GetInt(), min(0), max(0));
@@ -229,7 +235,8 @@ public:
     cf.AddMember("originQ",q(0),allocator);
     cf.AddMember("dimP",static_cast<int>(p.size()),allocator);
     cf.AddMember("dimQ",static_cast<int>(q.size()),allocator);
-
+    cf.AddMember("resP",p(1) - p(0),allocator);
+    cf.AddMember("resQ",q(1) - q(0),allocator);
     response.AddMember("cf", cf, allocator);
   }
 
@@ -279,10 +286,10 @@ public:
           auto asio_buffer = boost::asio::buffer(capnpData);
           boost::asio::async_read(socket_, asio_buffer, yield);
 
+          capnp::MallocMessageBuilder noTraversalLimit;
           msg::Message::Reader msg;
           try {
             CapnpReader reader(asio_buffer);
-            capnp::MallocMessageBuilder noTraversalLimit;
             noTraversalLimit.setRoot(reader.getMessage());
             msg = noTraversalLimit.getRoot<msg::Message>().asReader();
 
