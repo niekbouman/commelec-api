@@ -531,8 +531,13 @@ int main(int argc, char *argv[]) {
   } catch (std::out_of_range& e) {
     std::cout << "Config error - unknown resource type: "
               << getString(cfg, "resource-type") << std::endl;
-    return -1;
-  } catch (const std::exception_ptr &ep)
+    return -1;    
+  } 
+  
+#ifndef __arm__
+// armel arch does not support exception_ptr 
+//
+  catch (const std::exception_ptr &ep)
   // Exceptions coming from inside coroutines (these are wrapped in an
   // exception_ptr and have to be rethrown, see below)
   {
@@ -543,6 +548,8 @@ int main(int argc, char *argv[]) {
       std::cout << "Exception occurred!" << std::endl;
       std::cout << e.what() << std::endl;
     }
-  } 
+  }
+#endif
+
 }
 

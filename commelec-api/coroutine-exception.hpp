@@ -5,6 +5,33 @@
 #include <boost/exception/all.hpp>
 #include <boost/asio/spawn.hpp>
 
+
+#ifdef __arm__
+
+#include <iostream>
+
+template <typename Handler, typename Function>
+void spawn_coroutine(Handler h, Function f) {
+  boost::asio::spawn(std::forward<Handler>(h),
+                     [f](boost::asio::yield_context yield) {
+    try {
+      f(yield);
+    } catch (const boost::coroutines::detail::forced_unwind &) {
+      throw;
+      // needed for proper stack unwinding when coroutines are destroyed
+    } catch (const std::exception& e) {
+      std::cout << "Exception: " << e.what() << std::endl;
+    } catch (...) {
+      std::cout << "Unknown exception occurred!" << std::endl;
+    }
+  });
+}
+
+
+
+
+#else
+
 inline boost::exception_ptr convertExceptionPtr(std::exception_ptr ex) {
   try {
     throw boost::enable_current_exception(ex);
@@ -49,4 +76,7 @@ void spawn_coroutine(Handler h, Function f) {
   });
 }
 
-#endif
+
+#endif // _arm_
+#endif // _COROUTINEEXCEPT_H_
+
