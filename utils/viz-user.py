@@ -10,6 +10,7 @@ import numpy as np
 import json
 import socket
 import struct
+import sys
 
 def makeHeader(jsonsize,capnpsize):
     """Make the header for TCP framing (so that the server knows
@@ -83,13 +84,17 @@ def readbytes(sock, length):
 
 def main():
 
+    if len(sys.argv) < 2:
+        print 'Usage',sys.argv[0],'<port>'
+
+    listenPort = int(sys.argv[1])
+    # listen for incoming advertisements on this port
+
     res = 100
     Ppixels = 50
     Qpixels = 50
     # resolution of the plot
 
-    listenPort = 12345
-    # listen for incoming advertisements on this port
 
     vizHost = '127.0.0.1'
     vizPort = 50007
@@ -107,6 +112,7 @@ def main():
     plt.show()
     # enable interactive plotting mode
 
+    showColorbarFlag = True
     while True:
 
         data, addr = udpsock.recvfrom(1<<16)
@@ -152,9 +158,16 @@ def main():
             extremePoints.append(Pm)
             extremePoints.append(Pm+dimP * response['cf']['resP'])
 
+            plt.cla()
             plt.imshow(np.flipud(M.transpose()), extent=extremePoints)
             plt.xlabel('$Q$ [VAR]')
             plt.ylabel('$P$ [W]')
+            #plt.xlim((-15,15))
+            #plt.ylim((-15,15))
+            if showColorbarFlag:
+                showColorbarFlag = False
+                plt.colorbar()
+                # show the colorbar just once
             plt.draw()
             # plot M
    

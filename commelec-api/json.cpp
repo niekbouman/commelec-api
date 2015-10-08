@@ -50,14 +50,14 @@ void writeJSONfile(const char *configFile, rapidjson::Document& d) {
 }
 
 // Helper function to parse JSON with runtime exceptions
-int getInt(rapidjson::Document& d,const char *name) {
+int getInt(const rapidjson::Value& d,const char *name) {
   auto itr = d.FindMember(name);
   if (itr != d.MemberEnd())
     return itr->value.GetInt();
   throw std::runtime_error( (name+std::string(" field missing in JSON object (datatype: int)")).c_str());
 }
 
-double getDouble(rapidjson::Document& d,const char *name) {
+double getDouble(const rapidjson::Value& d,const char *name) {
   auto itr = d.FindMember(name);
   if (itr != d.MemberEnd())
     return itr->value.GetDouble();
@@ -66,14 +66,14 @@ double getDouble(rapidjson::Document& d,const char *name) {
   throw std::runtime_error( (name+std::string(" field missing in JSON object (datatype: double)")).c_str());
 }
 
-bool getBool(rapidjson::Document& d,const char *name) {
+bool getBool(const rapidjson::Value& d,const char *name) {
   auto itr = d.FindMember(name);
   if (itr != d.MemberEnd())
     return itr->value.GetBool();
   throw std::runtime_error((name+std::string(" field missing in JSON object (datatype: boolean)")).c_str());
 }
 
-bool getBool(rapidjson::Document& d,const char *name,bool defaultVal) {
+bool getBool(const rapidjson::Value& d,const char *name,bool defaultVal) {
   auto itr = d.FindMember(name);
   if (itr != d.MemberEnd())
     return itr->value.GetBool();
@@ -82,7 +82,7 @@ bool getBool(rapidjson::Document& d,const char *name,bool defaultVal) {
 
 
 // Helper function to parse JSON with runtime exceptions
-std::string getString(rapidjson::Document& d,const char *name) {
+std::string getString(const rapidjson::Value& d,const char *name) {
   auto itr = d.FindMember(name);
   if (itr != d.MemberEnd())
     return itr->value.GetString();

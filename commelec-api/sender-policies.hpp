@@ -17,11 +17,15 @@
 // Packed vs unpacked serialization (policy classes)
 //######################################################################
 struct PackedSerialization {
-  // serialize and pack data and send it over UDP
-  inline void serializeAndAsyncSend(capnp::MallocMessageBuilder &builder,
-                             boost::asio::ip::udp::socket &socket,
-                             boost::asio::ip::udp::endpoint endpoint,
-                             boost::asio::yield_context yield, bool debug = false) {
+
+  // serialize and pack data and send it over UDP (to possibly multiple endpoints)
+  inline void
+  serializeAndAsyncSend(capnp::MallocMessageBuilder &builder,
+                        boost::asio::ip::udp::socket &socket,
+                        const std::vector<boost::asio::ip::udp::endpoint> &endpoints,
+                        boost::asio::yield_context yield, bool debug = false)
+
+  {
     std::vector<uint8_t> packedDataBuffer(messageByteSize(builder));
     // buffer to hold the packed advertisement
     // ( messageByteSize(msg) is a crude upper bound for the buffer size.
@@ -29,19 +33,30 @@ struct PackedSerialization {
 
     writePackedMessage(packedDataBuffer, builder);
     // will resize packedDataBuffer to the exact size of the packed data
-    
-    if (debug)
-    {
-      auto buf = boost::asio::const_buffer(boost::asio::buffer(packedDataBuffer));
+
+    if (debug) {
+      auto buf =
+          boost::asio::const_buffer(boost::asio::buffer(packedDataBuffer));
       AdvValidator<PackedSerialization> val(buf);
     }
 
-    auto bytesWritten = socket.async_send_to(
-        boost::asio::buffer(packedDataBuffer), endpoint, yield);
-    if (packedDataBuffer.size() != bytesWritten)
-      throw std::runtime_error(
-          "Could not write message in its entirety to the socket");
+    for (const auto &ep : endpoints) {
+      auto bytesWritten = socket.async_send_to(
+          boost::asio::buffer(packedDataBuffer), ep, yield);
+      if (packedDataBuffer.size() != bytesWritten)
+        throw std::runtime_error(
+            "Could not write message in its entirety to the socket");
+    }
   }
+
+  inline void serializeAndAsyncSend(capnp::MallocMessageBuilder &builder,
+                             boost::asio::ip::udp::socket &socket,
+                             boost::asio::ip::udp::endpoint endpoint,
+                             boost::asio::yield_context yield, bool debug = false)
+  {
+    serializeAndAsyncSend(builder, socket, std::vector<boost::asio::ip::udp::endpoint>{endpoint}, yield, debug);
+  }
+
 
   struct CapnpReader {
     CapnpReader(capnp::byte *bufferPtr, size_t bufferSizeInBytes)
@@ -64,9 +79,11 @@ struct PackedSerialization {
 
 struct NonPackedSerialization {
   // serialize data and send it over UDP (packing is omitted)
-  inline void serializeAndAsyncSend(capnp::MallocMessageBuilder &builder,
-                             boost::asio::ip::udp::socket &socket, boost::asio::ip::udp::endpoint endpoint,
-                             boost::asio::yield_context yield, bool debug = false) {
+  inline void serializeAndAsyncSend(
+      capnp::MallocMessageBuilder &builder,
+      boost::asio::ip::udp::socket &socket,
+      const std::vector<boost::asio::ip::udp::endpoint> &endpoints,
+      boost::asio::yield_context yield, bool debug = false) {
     AsioKJOutBufferAdapter adapter;
     writeMessage(adapter, builder);
     // almost no data is copied (except the first segment), instead, a list of tuples (pointer to data, data size)
@@ -90,14 +107,28 @@ struct NonPackedSerialization {
       AdvValidator<NonPackedSerialization> val(const_asio_buf);
     }
 
-    auto bytesWritten =
-        socket.async_send_to(adapter.get_buffer_sequence(), endpoint, yield);
-    // data are read directly from the MallocMessageBuilder (hence, builder
-    // should not be destroyed before the async write operation finishes
+    for (const auto &ep : endpoints) {
+      auto bytesWritten =
+          socket.async_send_to(adapter.get_buffer_sequence(), ep, yield);
+      // data are read directly from the MallocMessageBuilder (hence, builder
+      // should not be destroyed before the async write operation finishes
 
-    if (adapter.totalSize() != bytesWritten)
-      throw std::runtime_error(
-          "Could not write message in its entirety to the socket");
+      if (adapter.totalSize() != bytesWritten)
+        throw std::runtime_error(
+            "Could not write message in its entirety to the socket");
+    }
+  }
+
+  inline void serializeAndAsyncSend(capnp::MallocMessageBuilder &builder,
+                                    boost::asio::ip::udp::socket &socket,
+                                    boost::asio::ip::udp::endpoint endpoint,
+                                    boost::asio::yield_context yield,
+                                    bool debug = false) {
+
+    serializeAndAsyncSend(
+        builder, socket,
+        std::vector<boost::asio::ip::udp::endpoint>{endpoint}, yield,
+        debug);
   }
 
   // TODO: validate that the buffer size (in bytes) is a multiple of 8

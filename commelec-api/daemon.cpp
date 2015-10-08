@@ -25,6 +25,7 @@
 #include <boost/asio/high_resolution_timer.hpp>
 #include <boost/filesystem.hpp>
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <unordered_map>
@@ -180,15 +181,15 @@ public:
   CommelecDaemon(boost::asio::io_service &io_service,AgentIdType agentId, Resource resourceType,
                  PortNumberType localhost_listen_port,
                  PortNumberType network_listen_port,
-                 const boost::asio::ip::udp::endpoint &local_dest_endpoint,
-                 const boost::asio::ip::udp::endpoint &network_dest_endpoint, bool debug = false)
+                 std::vector<boost::asio::ip::udp::endpoint>& req_endpoints,
+                 std::vector<boost::asio::ip::udp::endpoint>& adv_endpoints, bool debug = false)
       : _debug(debug), _agentId(agentId), _resourceType(resourceType), _strand(io_service),
         _local_socket(io_service,
                       udp::endpoint(udp::v4(), localhost_listen_port)),
         _network_socket(io_service,
                         udp::endpoint(udp::v4(), network_listen_port)),
-        _local_dest_endpoint(local_dest_endpoint),
-        _network_dest_endpoint(network_dest_endpoint), _timer(io_service),
+        _outgoing_req_endpoints(req_endpoints),
+        _outgoing_adv_endpoints(adv_endpoints), _timer(io_service),
         logger(spdlog::stdout_logger_mt("console"))
 
   {
@@ -214,15 +215,16 @@ private:
 
       auto asio_buffer = boost::asio::buffer(_network_data, networkBufLen);
       boost::asio::ip::udp::endpoint sender_endpoint;
-      //size_t bytes_received =
-      _network_socket.async_receive_from(asio_buffer, sender_endpoint, yield);
+      size_t bytes_received = _network_socket.async_receive_from(
+          asio_buffer, sender_endpoint, yield);
       // wait for incoming packet
 
       if (_resourceType == Resource::custom) {
 
-        // forward payload to client
-        //auto bytesWritten =
-        _local_socket.async_send_to(asio_buffer, _local_dest_endpoint, yield);
+        // forward payload to client(s)
+        auto writeBuf = boost::asio::buffer(_network_data,bytes_received);
+        for(const auto& ep : _outgoing_req_endpoints)
+          _local_socket.async_send_to(writeBuf, ep, yield);
 
       } else {
 
@@ -262,9 +264,10 @@ private:
         Writer<StringBuffer> writer(buffer);
         d.Accept(writer);
         std::string payload = buffer.GetString();
-        _local_socket.async_send_to(boost::asio::buffer(payload),
-                                    _local_dest_endpoint, yield);
-        // flatten to string and send packet
+
+        for(const auto& ep : _outgoing_req_endpoints)
+          _local_socket.async_send_to(boost::asio::buffer(payload), ep, yield);
+        // flatten to string and send packet(s)
       }
     }
   }
@@ -296,7 +299,8 @@ private:
 
 
         // auto bytesWritten =
-        _network_socket.async_send_to(read_buffer, _network_dest_endpoint, yield);
+        for(const auto& ep : _outgoing_adv_endpoints)
+          _network_socket.async_send_to(read_buffer, ep, yield);
 
       } else {
 
@@ -345,8 +349,8 @@ private:
         default:
           break;
         }
-        serializeAndAsyncSend(_builder, _network_socket, _network_dest_endpoint,
-                              yield, _debug);
+        serializeAndAsyncSend(_builder, _network_socket,
+                              _outgoing_adv_endpoints, yield, _debug);
         // send packet
       }
     }
@@ -364,8 +368,12 @@ private:
   boost::asio::io_service::strand _strand;
   boost::asio::ip::udp::socket _local_socket;
   boost::asio::ip::udp::socket _network_socket;
-  boost::asio::ip::udp::endpoint _local_dest_endpoint;
-  boost::asio::ip::udp::endpoint _network_dest_endpoint;
+
+  //boost::asio::ip::udp::endpoint _local_dest_endpoint;
+
+  std::vector<boost::asio::ip::udp::endpoint>& _outgoing_req_endpoints; //_network_dest_endpoint;
+  std::vector<boost::asio::ip::udp::endpoint>& _outgoing_adv_endpoints; //_network_dest_endpoint;
+  
   boost::asio::high_resolution_timer _timer;
   // asio stuff
 
@@ -468,6 +476,31 @@ int commandLineParser(int argc, char *argv[], std::string& configFile, ResourceM
   }
 }
 
+void parseEndpointList(const std::string &name, rapidjson::Value &jsonObj,
+                       std::vector<udp::endpoint> &epVec) {
+  if (jsonObj.HasMember(name.c_str())) {
+    auto &epList = jsonObj[name.c_str()];
+
+    if (!epList.IsArray()) {
+      throw std::runtime_error("Error: " + name +
+                               " argument should be a list of "
+                               "{\"ip\":\"<string>\",\"port\":<num>} "
+                               "pairs.");
+    }
+
+    //for (auto itr = epList.Begin(); itr != epList.End(); ++itr) {
+    //  epVec.emplace_back(
+    //      make_endpoint(getString(*itr, "RA-ip"),
+    //                    static_cast<PortNumberType>(getInt(*itr, "RA-port"))));
+    //}
+    //
+    //
+    std::for_each(epList.Begin(), epList.End(),[&epVec](const rapidjson::Value& ep) {
+      epVec.emplace_back(make_endpoint(getString(ep, "ip"),
+                         static_cast<PortNumberType>(getInt(ep, "port")))); });
+
+  }
+}
 
 // main function
 int main(int argc, char *argv[]) {
@@ -508,22 +541,31 @@ int main(int argc, char *argv[]) {
   // read the configuration parameters from disk
 
   try {
+    std::vector<udp::endpoint> req_dests;
+    std::vector<udp::endpoint> adv_dests;
+
+    req_dests.emplace_back(make_endpoint(getString(cfg, "RA-ip"),
+                static_cast<PortNumberType>(getInt(cfg, "RA-port"))));
+    adv_dests.emplace_back(make_endpoint(getString(cfg, "GA-ip"),
+                static_cast<PortNumberType>(getInt(cfg, "GA-port"))));
+
+    parseEndpointList("clone-req",cfg,req_dests);
+    parseEndpointList("clone-adv",cfg,adv_dests);
+    // possibly more destinations to which packets (requests or advertisements)
+    // should be sent
+
     CommelecDaemon<> daemon(
         io_service, getInt(cfg, "agent-id"),
         resources.at(getString(cfg, "resource-type")),
         static_cast<PortNumberType>(getInt(cfg, "listenport-RA-side")),
         static_cast<PortNumberType>(getInt(cfg, "listenport-GA-side")),
-        make_endpoint(getString(cfg, "RA-ip"),
-                      static_cast<PortNumberType>(getInt(cfg, "RA-port"))),
-        make_endpoint(getString(cfg, "GA-ip"),
-                      static_cast<PortNumberType>(getInt(cfg, "GA-port"))),
+        req_dests,adv_dests,
         getBool(cfg, "debug-mode", false));
     //instantiate our main class, with the parameters as set by the user in the config file
     // debug-mode is an optional parameter
 
     io_service.run();
     // run asio's event-loop; used for asynchronous network IO using coroutines
-
 
   } catch (std::runtime_error& e) {
     std::cout << "Exception: '" << e.what() << std::endl;
