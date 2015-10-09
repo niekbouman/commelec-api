@@ -27,15 +27,15 @@ If you open this configuration file, youll find that it has the following conten
 
 The fields have the following meaning:
 
-field | meaning
-------|--------
-`resource-type` | the advertisement type (for a list of available advertisement types, run `commelecd --list-resources`  
-`agent-id` | the ID number of the resource agent (should be assigned manually, and coincide with the configuration of the grid agent)
-`GA-ip`,`GA-port` |  the IP address and port where the grid agent listens for incoming advertisements
-`RA-ip`,`RA-port` | the IP address and port of the socket of your resource agent (where it listens for incoming requests). In the typical case, the daemon runs on the same machine which then implies that `"RA-ip":"127.0.0.1"`
-`listenport-GA-side` |  the port where the daemon listens for requests sent by the grid agent
-`listenport-RA-side` |  the port where the daemon listens for advertisements as sent by your resource agent
-`debug-mode` |  mode to verify correctness of the advertisements
+field | type | meaning
+------|------|--------
+`resource-type` | string | the advertisement type (for a list of available advertisement types, run `commelecd --list-resources` )  
+`agent-id` | integer | the ID number of the resource agent (should be assigned manually, and coincide with the configuration of the grid agent)
+`GA-ip`,`GA-port` |  string, integer | the IP address and port where the grid agent listens for incoming advertisements
+`RA-ip`,`RA-port` | string, integer | the IP address and port of the socket of your resource agent (where it listens for incoming requests). In the typical case, the daemon runs on the same machine which then implies that `"RA-ip":"127.0.0.1"`
+`listenport-GA-side` |  integer | the port where the daemon listens for requests sent by the grid agent
+`listenport-RA-side` |  integer | the port where the daemon listens for advertisements as sent by your resource agent
+`debug-mode` |  bool (true/false) | mode to verify correctness of the advertisements
 
 ## Running the Daemon
 
@@ -57,6 +57,6 @@ To use this feature, add the following JSON field to the configuration:
 etc.
 
 ## The `custom` Resource
-It is also possible to send Commelec advertisements and receive Commelec requests in the packed Cap’n Proto representation. To use this feature, set the `resource-type` field to `custom`. (The daemon will then disable the translation from/to JSON)
+It is also possible to send Commelec advertisements and receive Commelec requests in the packed Cap’n Proto representation. To use this feature, set the `resource-type` field to `custom`. (The daemon will then disable the translation from/to JSON.)
 
 
