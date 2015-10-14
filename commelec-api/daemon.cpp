@@ -107,8 +107,6 @@ void createUncontrGenAdv(msg::Message::Builder msg, rapidjson::Document &d) {
   return;
 }
 
-
-
 void createDiscreteAdv(msg::Message::Builder msg, rapidjson::Document &d) {
   auto Pmin = getDouble(d,"Pmin");
   auto Pmax = getDouble(d,"Pmax");
@@ -297,7 +295,6 @@ private:
             // throws if advertisement does not pass checks
         }
 
-
         // auto bytesWritten =
         for(const auto& ep : _outgoing_adv_endpoints)
           _network_socket.async_send_to(read_buffer, ep, yield);
@@ -313,7 +310,8 @@ private:
 
         // parse JSON
 
-        auto msg = _builder.initRoot<msg::Message>();
+        capnp::MallocMessageBuilder builder;
+        auto msg = builder.initRoot<msg::Message>();
         msg.setAgentId(_agentId);
         // make advertisement, depending on which resource
 
@@ -349,9 +347,10 @@ private:
         default:
           break;
         }
-        serializeAndAsyncSend(_builder, _network_socket,
+
+        serializeAndAsyncSend(builder, _network_socket,
                               _outgoing_adv_endpoints, yield, _debug);
-        // send packet
+        // send packet(s)
       }
     }
   }
@@ -380,9 +379,6 @@ private:
   capnp::byte _local_data[maxUDPsize]; //2^16 bytes (max UDP packet size is 65,507 bytes)
   capnp::byte _network_data[networkBufLen];
   // persistent arrays for storing incoming udp packets
-
-  capnp::MallocMessageBuilder _builder;
-  // builder for storing outgoing (repeated) packets
 
   std::shared_ptr<spdlog::logger> logger;
 };
