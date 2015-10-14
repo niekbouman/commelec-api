@@ -18,6 +18,21 @@
 //######################################################################
 struct PackedSerialization {
 
+
+private:
+
+    std::vector<uint8_t> packedDataBuffer; //(messageByteSize(builder));
+
+
+public:
+
+
+  PackedSerialization()
+  {
+    packedDataBuffer.reserve(2048);
+  }
+
+
   // serialize and pack data and send it over UDP (to possibly multiple endpoints)
   inline void
   serializeAndAsyncSend(capnp::MallocMessageBuilder &builder,
@@ -26,7 +41,10 @@ struct PackedSerialization {
                         boost::asio::yield_context yield, bool debug = false)
 
   {
-    std::vector<uint8_t> packedDataBuffer(messageByteSize(builder));
+    //std::vector<uint8_t> packedDataBuffer(messageByteSize(builder));
+    packedDataBuffer.resize(messageByteSize(builder));
+
+
     // buffer to hold the packed advertisement
     // ( messageByteSize(msg) is a crude upper bound for the buffer size.
     // The exact size that we will actually need is unknown at this point)
