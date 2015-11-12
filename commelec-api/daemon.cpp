@@ -120,9 +120,10 @@ void createDiscreteAdv(msg::Message::Builder msg, rapidjson::Document &d) {
   auto coeffP = getDouble(d,"coeffP");
   auto coeffPsquared = getDouble(d,"coeffPsquared");
   auto Pimp = getDouble(d,"Pimp");
+  auto Qimp = getDouble(d,"Qimp");
 
   _realDiscreteDeviceAdvertisement(msg.initAdvertisement(), Pmin, Pmax, points,
-                                   error, coeffPsquared, coeffP, Pimp);
+                                   error, coeffPsquared, coeffP, Pimp, Qimp);
   return;
 }
 
@@ -135,10 +136,11 @@ void createDiscreteUnifAdv(msg::Message::Builder msg, rapidjson::Document &d) {
   auto coeffP = getDouble(d,"coeffP");
   auto coeffPsquared = getDouble(d,"coeffPsquared");
   auto Pimp = getDouble(d,"Pimp");
+  auto Qimp = getDouble(d,"Qimp");
 
   _uniformRealDiscreteDeviceAdvertisement(msg.initAdvertisement(), Pmin, Pmax,
                                           stepsize, error, coeffPsquared,
-                                          coeffP, Pimp);
+                                          coeffP, Pimp, Qimp);
   return;
 }
 
@@ -273,6 +275,8 @@ private:
     // listen for JSON-encoded advertisement-parameters from the RA
 
     using namespace rapidjson;
+        Document d;
+
     for (;;) { // run endlessly
 
       auto asio_buffer = boost::asio::buffer(_local_data, maxUDPsize);
@@ -301,7 +305,6 @@ private:
 
       } else {
 
-        Document d;
         _local_data[bytes_received] = 0; // terminate data as C-string
         d.Parse(reinterpret_cast<const char *>(_local_data));
 

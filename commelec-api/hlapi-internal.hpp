@@ -51,7 +51,7 @@ inline void _uncontrollableLoad(msg::Advertisement::Builder adv, double Pexp,
                                 double dPdown, double dQup, double dQdown,
                                 double Pimp, double Qimp) {
   _uncontrollableResource(adv, Pexp, Qexp, Srated, dPup, dPdown, dQup, dQdown,
-                          Pimp, Qimp, ResourceType::load,0.0);
+                          Pimp, Qimp, ResourceType::load, 0.0);
 };
 // Advertisement for an uncontrollable load:
 //   PQ profile = singleton(Pexp,Qexp)
@@ -78,21 +78,21 @@ inline void _uncontrollableGenerator(msg::Advertisement::Builder adv, double Pex
 //   Cost = 0 (constant function)
 //   Implemented setpoint = (Pimp,Qimp)
 
-void
-_realDiscreteDeviceAdvertisement(msg::Advertisement::Builder adv, 
-                    double Pmin,double Pmax, // active power bounds
-                    std::vector<double>& discretizationPoints,
-                    double accumulatedError, //  
-                    double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
-                    double Pimp);
-void
+void _realDiscreteDeviceAdvertisement(
+    msg::Advertisement::Builder adv, double Pmin,
+    double Pmax, // active power bounds
+    std::vector<double> &discretizationPoints,
+    double accumulatedError,   //
+    double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
+    double Pimp, double Qimp);
 
-_uniformRealDiscreteDeviceAdvertisement(msg::Advertisement::Builder adv, 
-                    double Pmin,double Pmax, // active power bounds
-                    double stepSize,
-                    double accumulatedError, //  
-                    double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
-                    double Pimp);
+void _uniformRealDiscreteDeviceAdvertisement(
+    msg::Advertisement::Builder adv, double Pmin,
+    double Pmax, // active power bounds
+    double stepSize,
+    double accumulatedError,   //
+    double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
+    double Pimp, double Qimp);
 
 #endif
 

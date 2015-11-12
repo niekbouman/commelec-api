@@ -478,7 +478,7 @@ public:
   makeAdvertisement(msg::Advertisement::Builder adv, double Pmin, double Pmax,
                     double alpha,
                     double beta, // cost function: f(P,Q) = alpha P^2 + beta P
-                    double Pimp, Parameters... params) {
+                    double Pimp, double Qimp, Parameters... params) {
 
     // PQ profile: rectangle
     auto rectangularPQprof = adv.initPQProfile().initRectangle(2);
@@ -494,7 +494,7 @@ public:
     cv::PolyVar Pvar("P");
     cv::buildPolynomial(cf.initPolynomial(), alpha * (Pvar ^ 2) + beta * Pvar);
 
-    setImplSetpoint(adv, Pimp, 0.0);
+    setImplSetpoint(adv, Pimp, Qimp);
   }
 };
 
@@ -504,10 +504,11 @@ void _realDiscreteDeviceAdvertisement(
     std::vector<double> &points, // the functions modifies (sorts) the vector
     double error, double alpha,
     double beta, // cost function: f(P,Q) = alpha P^2 + beta P
-    double Pimp) // implemented setpoint
+    double Pimp,
+    double Qimp) // implemented setpoint
 {
   DiscreteDevice<ProjBelief>{}.makeAdvertisement(adv, Pmin, Pmax, alpha, beta,
-                                                 Pimp, points, error);
+                                                 Pimp, Qimp, points, error);
 }
 
 void _uniformRealDiscreteDeviceAdvertisement(
@@ -516,8 +517,9 @@ void _uniformRealDiscreteDeviceAdvertisement(
     double stepSize,
     double accumulatedError,   //
     double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
-    double Pimp) {
+    double Pimp,
+    double Qimp) {
   DiscreteDevice<RoundBelief>{}.makeAdvertisement(
-      adv, Pmin, Pmax, alpha, beta, Pimp, stepSize, accumulatedError);
+      adv, Pmin, Pmax, alpha, beta, Pimp, Qimp, stepSize, accumulatedError);
 }
 
