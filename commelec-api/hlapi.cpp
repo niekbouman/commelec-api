@@ -392,29 +392,53 @@ void _uncontrollableResource(msg::Advertisement::Builder adv, double Pexp,
   adv.initCostFunction().setReal(0);
 }
 
+void addCase(msg::ExprCase<msg::RealExpr>::Builder caseItem, double value,
+             double leftIntvalBoundary, double rightIntvalBoundary) {
+  // small helper function to add a case to the case distinction structure
+  auto interval = caseItem.initSet().initRectangle(1);
+  interval[0].initBoundA().setReal(leftIntvalBoundary);
+  interval[0].initBoundB().setReal(rightIntvalBoundary);
+  caseItem.initExpression().setReal(value);
+}
+
 class RoundBelief {
 public:
-  void makeBelief(msg::SetExpr::Builder bf, double stepSize, double error)
-  {
-      using namespace cv;
-      auto roundBelief = bf.initSingleton(2);
-      Var P("P");
-      Real step(stepSize);
-      Real err(error);
-      buildRealExpr(roundBelief[0], step * round((P-err)/step));
-      roundBelief[1].setVariable("Q"); // and directly forward Q
+  void makeBelief(msg::SetExpr::Builder bf, double stepSize, double error,
+                  double Pmin, double Pmax) {
+    using namespace cv;
+    auto roundBelief = bf.initSingleton(2);
+    Var P("P");
+
+    Real step(stepSize);
+    Real err(error);
+
+    Real corr(fmod(Pmin, stepSize));
+    // correction to align rounding to the value of Pmin
+
+    auto cd = roundBelief[0].initCaseDistinction();
+    cd.initVariables(1).set(0, "P"); // case distinction on P
+
+    auto inf = std::numeric_limits<double>::infinity();
+    auto cases = cd.initCases(3);
+    addCase(cases[0], Pmin, -inf, Pmin + error);
+    addCase(cases[1], Pmax, Pmax + error, inf);
+    // if (P - error) lies outside the PQ profile, we project to the boundary
+
+    auto interval = cases[2].initSet().initRectangle(1);
+    interval[0].initBoundA().setReal(-inf);
+    interval[0].initBoundB().setReal(inf);
+    // else we perform rounding 
+    // (we implement the "else" clause using the interval (-infinity,+infinity)
+    // which is safe because case-distinction evaluation order follows list order,
+    // hence this interval is checked last)
+
+    buildRealExpr(cases[2].initExpression(),
+                  step * round((P - err - corr) / step) + corr);
+    roundBelief[1].setVariable("Q"); // and directly forward Q
   }
 };
 
 class ProjBelief {
-  void addCase(msg::ExprCase<msg::RealExpr>::Builder caseItem, double value,
-               double leftIntvalBoundary, double rightIntvalBoundary) {
-    // small helper function to add a case to the case distinction structure
-    auto interval = caseItem.initSet().initRectangle(1);
-    interval[0].initBoundA().setReal(leftIntvalBoundary);
-    interval[0].initBoundB().setReal(rightIntvalBoundary);
-    caseItem.initExpression().setReal(value);
-  }
 
 public:
   void makeBelief(
@@ -499,8 +523,8 @@ public:
 };
 
 void _realDiscreteDeviceAdvertisement(
-    msg::Advertisement::Builder adv, double Pmin,
-    double Pmax,                 // active power bounds
+    msg::Advertisement::Builder adv, 
+    double Pmin, double Pmax,    // active power bounds
     std::vector<double> &points, // the functions modifies (sorts) the vector
     double error, double alpha,
     double beta, // cost function: f(P,Q) = alpha P^2 + beta P
@@ -512,14 +536,14 @@ void _realDiscreteDeviceAdvertisement(
 }
 
 void _uniformRealDiscreteDeviceAdvertisement(
-    msg::Advertisement::Builder adv, double Pmin,
-    double Pmax, // active power bounds
+    msg::Advertisement::Builder adv, 
+    double Pmin, double Pmax,  // active power bounds
     double stepSize,
     double accumulatedError,   //
     double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
     double Pimp,
     double Qimp) {
   DiscreteDevice<RoundBelief>{}.makeAdvertisement(
-      adv, Pmin, Pmax, alpha, beta, Pimp, Qimp, stepSize, accumulatedError);
+      adv, Pmin, Pmax, alpha, beta, Pimp, Qimp, stepSize, accumulatedError, Pmin, Pmax);
 }
 

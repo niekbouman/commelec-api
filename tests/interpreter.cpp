@@ -3,8 +3,10 @@
 
 #include <commelec-api/realexpr-convenience.hpp>
 #include <commelec-api/polynomial-convenience.hpp>
+#include <commelec-api/hlapi-internal.hpp>
 #include <commelec-interpreter/adv-interpreter.hpp>
 #include <capnp/message.h>
+#include <iostream>
 
 const lest::test specification[] =
 {
@@ -32,6 +34,23 @@ const lest::test specification[] =
     AdvFunc interpreter(adv);
 
     EXPECT( std::abs(interpreter.evaluate(expr,{{"X",b},{"Y",c}}) - (a * b + std::sin(c))) < 1e-8);
+
+  }},
+
+  {CASE( "Test rounding" )
+  {
+
+    // Build a message
+    ::capnp::MallocMessageBuilder message;
+    auto adv = message.initRoot<msg::Advertisement>();
+
+    double err = 600;
+
+    _uniformRealDiscreteDeviceAdvertisement(adv, -8000, 0, 1000, err, 0, 0, 0, 0);
+ 
+    AdvFunc interpreter(adv);
+    
+    EXPECT( interpreter.rectangularHull(adv.getBeliefFunction(),{{"P",-500},{"Q",0}}).min()(0) == -1000);
 
   }},
 
