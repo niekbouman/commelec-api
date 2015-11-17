@@ -14,4 +14,6 @@ double getDouble(const rapidjson::Value &d, const char *name);
 std::string getString(const rapidjson::Value &d, const char *name);
 // Helper functions to parse JSON with runtime exceptions
 
+const rapidjson::Value&  getRef(const rapidjson::Value& d,const char *name);
+
 #endif

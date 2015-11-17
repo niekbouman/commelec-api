@@ -81,6 +81,14 @@ bool getBool(const rapidjson::Value& d,const char *name,bool defaultVal) {
 }
 
 
+const rapidjson::Value&  getRef(const rapidjson::Value& d,const char *name) {
+  auto itr = d.FindMember(name);
+  if (itr != d.MemberEnd())
+    return itr->value; //->value.GenericValue();
+  throw std::runtime_error((name+std::string(" field missing in JSON object ")).c_str());
+}
+
+
 // Helper function to parse JSON with runtime exceptions
 std::string getString(const rapidjson::Value& d,const char *name) {
   auto itr = d.FindMember(name);
