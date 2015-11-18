@@ -508,8 +508,8 @@ public:
     auto rectangularPQprof = adv.initPQProfile().initRectangle(2);
     rectangularPQprof[0].initBoundA().setReal(Pmin);
     rectangularPQprof[0].initBoundB().setReal(Pmax);
-    rectangularPQprof[1].initBoundA().setReal(0.0);
-    rectangularPQprof[1].initBoundB().setReal(0.0);
+    rectangularPQprof[1].initBoundA().setReal(Qimp);
+    rectangularPQprof[1].initBoundB().setReal(Qimp);
 
     makeBelief(adv.initBeliefFunction(), params...);
 
