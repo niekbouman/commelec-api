@@ -20,19 +20,19 @@ class JSONReqHandler(SocketServer.BaseRequestHandler):
     to the daemon.
     """
 
-    def printRequest(requestAsDict):
+    def printRequest(self,requestAsDict):
         # Print the received request to the user
         print 'Received a request:'
-        print 'Sender ID number:', request['senderId']
-        if request['setpointValid']:
+        print 'Sender ID number:', requestAsDict['senderId']
+        if requestAsDict['setpointValid']:
             print 'Request contains a valid setpoint for implementation,'
-            print 'P = %f [Watts], Q = %f [VAR].' % (request['P'],request['Q'])
+            print 'P = %f [Watts], Q = %f [VAR].' % (requestAsDict['P'],requestAsDict['Q'])
 
-    def implementSetpoint(P,Q):
+    def implementSetpoint(self,P,Q):
         # A dummy function that would implement the setpoint
         pass
 
-    def computePVparameters(P,Q):
+    def computePVparameters(self,P,Q):
         p=dict()
 
         # PQ profile parameters
@@ -56,21 +56,21 @@ class JSONReqHandler(SocketServer.BaseRequestHandler):
     def handle(self):
         socket = self.request[1] 
         data = self.request[0].strip() # extract the UDP payload
-        request = json.loads(data) #parse the JSON data
+        req = json.loads(data) #parse the JSON data
 
-        printRequest(request)
-        [P,Q] = (request['P'],request['Q'])
-
-        if request['setpointValid']:
-            implementSetpoint(P,Q)
+        self.printRequest(req)
+        (P,Q) = (req['P'],req['Q'])
+        
+        if req['setpointValid']:
+            self.implementSetpoint(P,Q)
         else:
-            [P,Q] = (1.0e3,0)
+            (P,Q) = (1.0e3,0)
             # we did not get a valid setpoint from the grid agent
             # hence we simulate that the PV converter is currently
             # implementing the above setpoint 
             # (in a real resource agent, you would obviously not do this)
 
-        paramsAsDict = computePVparameters(P,Q)
+        paramsAsDict = self.computePVparameters(P,Q)
 
         # send the parameters to the daemon 
         socket.sendto(json.dumps(paramsAsDict), self.client_address)
@@ -79,7 +79,6 @@ if __name__ == "__main__":
     HOST, PORT = "localhost", 12350
     server = SocketServer.UDPServer((HOST, PORT), JSONReqHandler)
     server.serve_forever()
-
 ```
 
 ## Step 2: Configuring the daemon
@@ -90,7 +89,7 @@ First, we will generate a default configuration file, by running
   
     commelecd --generate
 
-This creates the file `daemon-cfg.json`. Open this file with a text editor and set "resource-type" to "pv". Also, set the appropriate ip addresses and port numbers.
+This creates the file `daemon-cfg.json`. Open this file with a text editor and set "resource-type" to "pv". Also, set the appropriate ip addresses and port numbers, in particular, set "RA-port" to 12350 (i.e., the same port as in the Python code).
 
 ## Step 3: Running the daemon and the resource agent
 
