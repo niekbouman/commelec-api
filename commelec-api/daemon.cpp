@@ -68,7 +68,7 @@ void createBattAdv(msg::Message::Builder msg, rapidjson::Document& d) {
   auto Qimp = getDouble(d,"Qimp");
 
   _BatteryAdvertisement(msg.initAdvertisement(), Pmin, Pmax, Srated, coeffP,
-                        coeffPsquared, 0.0, Pimp, Qimp);
+                        coeffPsquared, Pimp, Qimp);
   return;
 }
 

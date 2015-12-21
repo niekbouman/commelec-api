@@ -32,7 +32,7 @@
 
 void _BatteryAdvertisement(msg::Advertisement::Builder adv, double Pmin,
                            double Pmax, double Srated, double coeffP,
-                           double coeffPsquared, double coeffPcubed,
+                           double coeffPsquared,
                            double Pimp, double Qimp);
 
 void _PVAdvertisement(msg::Advertisement::Builder adv, double Srated,

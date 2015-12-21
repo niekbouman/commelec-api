@@ -124,7 +124,7 @@ int32_t makeBatteryAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
                                  int32_t *packedBytesize, uint32_t agentId,
                                  double Pmin, double Pmax, double Srated,
                                  double coeffP, double coeffPsquared,
-                                 double coeffPcubed, double Pimp, double Qimp) {
+                                 double Pimp, double Qimp) {
   try {
     ::capnp::MallocMessageBuilder builder;
     auto msg = builder.initRoot<msg::Message>();
@@ -132,7 +132,7 @@ int32_t makeBatteryAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
     auto adv = msg.initAdvertisement();
 
     _BatteryAdvertisement(adv, Pmin, Pmax, Srated, coeffP, coeffPsquared,
-                          coeffPcubed,Pimp,Qimp);
+                          Pimp,Qimp);
 
     auto byteSize = packToByteArray(builder, outBuffer, maxBufSize);
     *packedBytesize = byteSize;
@@ -148,7 +148,7 @@ int32_t makeBatteryAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
 
 void _BatteryAdvertisement(msg::Advertisement::Builder adv, double Pmin,
                            double Pmax, double Srated, double coeffP,
-                           double coeffPsquared, double coeffPcubed,
+                           double coeffPsquared,
                            double Pimp, double Qimp) {
 
   auto setpoint = adv.initImplementedSetpoint(2);
@@ -181,9 +181,12 @@ void _BatteryAdvertisement(msg::Advertisement::Builder adv, double Pmin,
   // Polynomial Cost Function
   auto cf = adv.initCostFunction();
   cv::PolyVar Pvar{"P"};
-  cv::buildPolynomial(cf.initPolynomial(), coeffPcubed * (Pvar ^ 3) +
-                                               coeffPsquared * (Pvar ^ 2) +
-                                               coeffP * Pvar);
+  //cv::buildPolynomial(cf.initPolynomial(), coeffPcubed * (Pvar ^ 3) +
+  //                                             coeffPsquared * (Pvar ^ 2) +
+  //                                             coeffP * Pvar);
+
+  cv::buildPolynomial(cf.initPolynomial(),
+                      0.5 * (Pvar ^ 2) + coeffP / (2.0 * coeffPsquared) * Pvar);
 }
 
 /*
@@ -205,14 +208,14 @@ int32_t makeFuelCellAdvertisement(uint8_t *outBuffer, int32_t maxBufSize,
                                   int32_t *packedBytesize, uint32_t agentId,
                                   double Pmin, double Pmax, double Srated,
                                   double coeffP, double coeffPsquared,
-                                  double coeffPcubed, double Pimp,
+                                  double Pimp,
                                   double Qimp) {
   // fuel cell is like battery but cannot consume power
   if ((Pmin < 0) || (Pmax < 0))
     return hlapi_illegal_input;
   return makeBatteryAdvertisement(outBuffer, maxBufSize, packedBytesize,
                                   agentId, Pmin, Pmax, Srated, coeffP,
-                                  coeffPsquared, coeffPcubed,Pimp,Qimp);
+                                  coeffPsquared, Pimp,Qimp);
 }
 
 /*
@@ -335,6 +338,12 @@ void _PVAdvertisement(msg::Advertisement::Builder adv, double Srated,
   PolyVar Pvar("P");
   PolyVar Qvar("Q");
   buildPolynomial(cf.initPolynomial(), -a_pv * Pvar + b_pv * (Qvar ^ 2));
+
+  //double c_pv;
+
+  //buildRealExpr(adv.initCostFunction(), Real(a_pv) * pow(P, Real(2.0)) +
+  //                                      Real(c_pv) * P +
+  //                                      Real(b_pv) * pow(Q, Real(2)));
 }
 
 void _uncontrollableResource(msg::Advertisement::Builder adv, double Pexp,
@@ -516,7 +525,10 @@ public:
     // Polynomial Cost Function
     auto cf = adv.initCostFunction();
     cv::PolyVar Pvar("P");
-    cv::buildPolynomial(cf.initPolynomial(), alpha * (Pvar ^ 2) + beta * Pvar);
+    //cv::buildPolynomial(cf.initPolynomial(), alpha * (Pvar ^ 2) + beta * Pvar);
+
+    cv::buildPolynomial(cf.initPolynomial(),
+                        0.5 * (Pvar ^ 2) + beta / (2.0 * alpha) * Pvar);
 
     setImplSetpoint(adv, Pimp, Qimp);
   }
