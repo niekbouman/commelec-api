@@ -118,6 +118,21 @@ struct AdvFunc
     _nesting_depth = 0;
     return proj(set, point);
   }
+  /*
+
+  std::complex<double> project(msg::SetExpr::Reader set,
+                          const std::complex<double> &point,
+                          const ValueMap &bound_vars) {
+    assert(_advValid);
+    _bound_vars = &bound_vars;
+    _nesting_depth = 0;
+
+    PointType x  {point.real(),point.imag()};
+    auto y = project(set, x, bound_vars);
+    return std::complex<double>(y[0],y[1]);
+  }
+  */
+
 
   Eigen::AlignedBoxXd rectangularHull(msg::SetExpr::Reader set, const ValueMap &bound_vars);
   double evalPartialDerivative(msg::RealExpr::Reader expr,std::string diffVariable, const ValueMap &bound_vars); 
