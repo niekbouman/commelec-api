@@ -207,8 +207,7 @@ private:
   template <typename Derived>
   bool membership(capnp::List<msg::RealExpr>::Reader singleton,
                   const Eigen::MatrixBase<Derived> &point) {
-    auto sz = singleton.size();
-    assert(point.size() == sz);
+    assert(point.size() == singleton.size());
     Eigen::VectorXd sing = evalToVector(singleton);
     return point.isApprox(sing);
   }
