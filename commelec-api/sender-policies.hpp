@@ -19,18 +19,18 @@
 struct PackedSerialization {
 
 
-private:
+//private:
 
-    std::vector<uint8_t> packedDataBuffer; //(messageByteSize(builder));
+//    std::vector<uint8_t> packedDataBuffer; //(messageByteSize(builder));
 
 
 public:
 
 
-  PackedSerialization()
-  {
-    packedDataBuffer.reserve(2048);
-  }
+  //PackedSerialization()
+  //{
+  //  packedDataBuffer.reserve(2048);
+  //}
 
 
   // serialize and pack data and send it over UDP (to possibly multiple endpoints)
@@ -41,8 +41,9 @@ public:
                         boost::asio::yield_context yield, bool debug = false)
 
   {
-    //std::vector<uint8_t> packedDataBuffer(messageByteSize(builder));
-    packedDataBuffer.resize(messageByteSize(builder));
+
+    std::vector<uint8_t> packedDataBuffer(messageByteSize(builder));
+    //packedDataBuffer.resize(messageByteSize(builder));
 
 
     // buffer to hold the packed advertisement
