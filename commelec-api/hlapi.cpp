@@ -178,15 +178,25 @@ void _BatteryAdvertisement(msg::Advertisement::Builder adv, double Pmin,
   singleton[0].setVariable("P");
   singleton[1].setVariable("Q");
 
-  // Polynomial Cost Function
-  auto cf = adv.initCostFunction();
-  cv::PolyVar Pvar{"P"};
-  //cv::buildPolynomial(cf.initPolynomial(), coeffPcubed * (Pvar ^ 3) +
-  //                                             coeffPsquared * (Pvar ^ 2) +
-  //                                             coeffP * Pvar);
+  if (std::abs(coeffPsquared) > 1e-6) {
+    // avoid division by zero
 
-  cv::buildPolynomial(cf.initPolynomial(),
-                      0.5 * (Pvar ^ 2) + coeffP / (2.0 * coeffPsquared) * Pvar);
+    // Polynomial Cost Function
+    auto cf = adv.initCostFunction();
+    cv::PolyVar Pvar{"P"};
+    
+    // cv::buildPolynomial(cf.initPolynomial(), coeffPcubed * (Pvar ^ 3) +
+    //                                             coeffPsquared * (Pvar ^ 2) +
+    //                                             coeffP * Pvar);
+
+    cv::buildPolynomial(cf.initPolynomial(),
+                        0.5 * (Pvar ^ 2) +
+                            coeffP / (2.0 * coeffPsquared) * Pvar);
+                        // apply normalization by Lipschitz constant
+  } else {
+    // zero cost
+    adv.initCostFunction().setReal(0);
+  }
 }
 
 /*
@@ -522,13 +532,22 @@ public:
 
     makeBelief(adv.initBeliefFunction(), params...);
 
-    // Polynomial Cost Function
-    auto cf = adv.initCostFunction();
-    cv::PolyVar Pvar("P");
-    //cv::buildPolynomial(cf.initPolynomial(), alpha * (Pvar ^ 2) + beta * Pvar);
+    if (std::abs(alpha) > 1e-6) {
+      // avoid division by zero
 
-    cv::buildPolynomial(cf.initPolynomial(),
-                        0.5 * (Pvar ^ 2) + beta / (2.0 * alpha) * Pvar);
+      // Polynomial Cost Function
+      auto cf = adv.initCostFunction();
+      cv::PolyVar Pvar("P");
+      // cv::buildPolynomial(cf.initPolynomial(), alpha * (Pvar ^ 2) + beta *
+      // Pvar);
+
+      cv::buildPolynomial(cf.initPolynomial(),
+                          0.5 * (Pvar ^ 2) + beta / (2.0 * alpha) * Pvar);
+      // apply normalization by Lipschitz constant
+    } else {
+      // zero cost
+      adv.initCostFunction().setReal(0);
+    }
 
     setImplSetpoint(adv, Pimp, Qimp);
   }
