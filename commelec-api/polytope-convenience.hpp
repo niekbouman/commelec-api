@@ -27,6 +27,31 @@
 #include "schema.capnp.h"
 
 namespace cv {
+ 
+/**
+Convenience function to define a convex polytope, described in the half-space respresentation, and stored in Eigen3-datatypes (matrix A and vector b).
+
+Example:
+~~~~{.cpp}
+using namespace cv;
+using msg::SetExpr;
+
+::capnp::MallocMessageBuilder mesg;
+auto setexpr = mesg.initRoot<SetExpr>();
+    
+Eigen::MatrixXd A(3, 2);
+A <<    1,  0,
+     -0.3,  1, 
+     -0.3, -1;
+
+Eigen::VectorXd b(3);
+b << 10, 
+     0, 
+     0;
+
+buildConvexPolytope(A, b, setexpr.initConvexPolytope());
+~~~~
+*/
 void buildConvexPolytope(Eigen::MatrixXd A, Eigen::VectorXd b,
                          msg::ConvexPolytope::Builder poly);
 }

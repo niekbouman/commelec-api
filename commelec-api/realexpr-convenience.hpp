@@ -24,10 +24,12 @@
 #define REALEXPRCONV_HPP
 
 // Niek J. Bouman (EPFL, 2015)
-//
-// Convenience function for (type-safe) definition of a RealExpr'ession 
-// in a Commelec Advertisement
-//
+// 
+/*! \file
+ * \brief Convenience function for (type-safe) definition of a RealExpr'ession in a Commelec Advertisement
+ * 
+ * Real Expressions are used to encode, for example, a cost function
+ */
 
 #include <string>
 #include <capnp/message.h>
@@ -59,6 +61,9 @@ Expr<BinaryOp<Expr<TypeA>,Expr<TypeB>,type>> name(Expr<TypeA> a, Expr<TypeB> b) 
   return Expr<BinaryOp<Expr<TypeA>,Expr<TypeB>,type>>(a,b); \
 }
 
+/**
+ * Convenience function namespace
+ */
 namespace cv {
 
 // instantiate classes for unary operations
@@ -105,6 +110,14 @@ public:
   }
 };
 
+/**
+ * Reference type
+ *
+ * This type is used in the ::name function, to give a name to an expression, in
+ * order to be able to refer back to that expression at another place.
+ *
+ * See the ::name function for more information.
+ */
 using Ref = Expr<_Ref>;
 
 class _Var {};
@@ -120,6 +133,19 @@ public:
   }
 };
 
+/**
+Symbolic variable type
+
+This type is used to declare a variable, and to set the label that will be used to encode the variable is the serialized message.
+
+Example:
+~~~~{.cpp}
+using namespace cv;
+Var x("X"); // Creates symbolic variable "x" that can be used in expressions. The variable will be labeled as "X" in the serialized message.
+~~~~
+
+See the Expr<_Var> class for details about the constructor.
+*/
 using Var = Expr<_Var>;
 
 template <typename T> class _Name {};
@@ -136,6 +162,28 @@ public:
   }
 };
 
+/**
+Bind a reference to an expression
+ 
+This function is used to give a name to an expression, in order to be able to refer back to that expression at another place 
+
+Example:
+~~~~{.cpp}
+    namespace cv;
+    using msg::RealExpr;
+
+    ::capnp::MallocMessageBuilder mesg, mesg2;
+
+    auto builder = mesg.initRoot<RealExpr>();
+    auto builder2 = mseg2.initRoot<RealExpr>();
+
+    Ref named_sum("a");
+    Var x("X");
+
+    buildRealExpr(builder, name(named_sum, Real(3) + x));
+    buildRealExpr(builder2, Real(5) * named_sum); // equivalent to 5 * (3 + x)
+~~~~
+*/
 template <typename T>
 Expr<_Name<Expr<T>>> name(const Ref &ref, const Expr<T> &ex) {
   return Expr<_Name<Expr<T>>>(ref, ex);
@@ -151,6 +199,19 @@ public:
   void build(msg::RealExpr::Builder realExpr) const  { realExpr.setReal(_value); }
 };
 
+/**
+Numeric (double) constant type
+
+This type is used to declare a numeric constant, which is internally represented as a double (a double-precision floating-point number).
+
+Example:
+~~~~{.cpp}
+using namespace cv;
+Real c(3.14); 
+~~~~
+
+See the Expr<_Real> class for details about the constructor.
+*/
 using Real = Expr<_Real>;
 
 class _Polynomial {};
@@ -240,8 +301,28 @@ operator/(Expr<TypeA> a, Expr<TypeB> b) {
 }
 
 // toplevel build function
-template<typename T>
-void buildRealExpr(msg::RealExpr::Builder realExpr,Expr<T> e) {
+
+ 
+/** 
+Function to build a RealExpr
+
+Example:
+Here we show how we can encode the expression (3.0 * x)^2, where x is a symbolic variable, encoded in the message as the string literal "X"
+
+~~~~{.cpp}
+    namespace cv;
+
+    ::capnp::MallocMessageBuilder mesg;
+
+    auto builder = mesg.initRoot<msg::RealExpr>();
+
+    Var x("X"); // this links the name "x" (used in the C++ code) to the string "X", which will be used as a label for the variable in the serialized message
+
+    buildRealExpr(builder, pow(Real(3) * x, Real(2)));
+~~~~
+
+*/
+template<typename T> void buildRealExpr(msg::RealExpr::Builder realExpr,Expr<T> e) {
   e.build(realExpr);
 }
 
