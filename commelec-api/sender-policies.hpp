@@ -13,27 +13,47 @@
 #include <commelec-api/asio-kj-interop.hpp>
 #include <commelec-api/adv-validation.hpp>
 
-//######################################################################
-// Packed vs unpacked serialization (policy classes)
-//######################################################################
-struct PackedSerialization {
+/*! \file
+\brief Packed vs. unpacked serialization and de-serialization (policy classes)
 
-
-//private:
-
-//    std::vector<uint8_t> packedDataBuffer; //(messageByteSize(builder));
-
+One can use this policy in the following way:
+ 
+~~~~{.cpp}
+template <typename PackingPolicy = PackedSerialization>
+class Foo : private PackingPolicy {
+  using PackingPolicy::serializeAndAsyncSend;
+  using typename PackingPolicy::CapnpReader; // note the typename keyword here
 
 public:
 
+  // etc
 
-  //PackedSerialization()
-  //{
-  //  packedDataBuffer.reserve(2048);
-  //}
+};
+~~~~
 
+Then, one can use the class and easily switch between packed and unpacked serialization/de-serialization
+~~~~{.cpp}
+Foo<> myfoo; // Packed serialization (from default setting)
+Foo<PackedSerialization> bar; // Packed serialization (explicitly)
+Foo<NonPackedSerialization> baz; // Non-Packed serialization (explicitly)
+~~~~
+*/
 
-  // serialize and pack data and send it over UDP (to possibly multiple endpoints)
+/** 
+Policy class for easily using <a href="http://capnproto.org">Cap'n Proto</a> with the <a href="http://think-async.com">Boost.asio</a> library
+-- Packed serialization and deserialization
+
+Here "packed" means that we use Cap'n Proto's elementary compression feature
+
+The actual policy here is about whether or not one uses packing. The NonPackedSerialization can be used as a drop-in replacement to disable packing.
+*/ 
+struct PackedSerialization {
+public:
+  /** Serialize and pack data and send it over UDP (to possibly multiple endpoints)
+   
+  If debug is true, it is assumed that the message which is transmitted is a Commelec advertisement, 
+and some elementary checks are performed on this advertisement by using the AdvValidator class.
+   */ 
   inline void
   serializeAndAsyncSend(capnp::MallocMessageBuilder &builder,
                         boost::asio::ip::udp::socket &socket,
@@ -68,6 +88,8 @@ public:
     }
   }
 
+  /** Overload of the PackedSerialization::serializeAndAsyncSend function for transmitting to a single endpoint
+   */ 
   inline void serializeAndAsyncSend(capnp::MallocMessageBuilder &builder,
                              boost::asio::ip::udp::socket &socket,
                              boost::asio::ip::udp::endpoint endpoint,
@@ -77,6 +99,8 @@ public:
   }
 
 
+  /** Policy class to read a Commelec message from a buffer.
+   */
   struct CapnpReader {
     CapnpReader(capnp::byte *bufferPtr, size_t bufferSizeInBytes)
         : is(::kj::ArrayPtr<const capnp::byte>(bufferPtr, bufferSizeInBytes)),
@@ -86,6 +110,32 @@ public:
               boost::asio::buffer_cast<const capnp::byte *>(buffer),
               boost::asio::buffer_size(buffer))),
           reader(is) {}
+
+    /** Get a Cap'n Proto reader for the Message type
+    
+    Example: Receive a packet from a socket and unpack it using Cap 'n Proto, 
+    and get a msg::Message::Reader to access the Commelec message
+    
+    ~~~~{.cpp}
+    
+    std::array<uint8_t, 1 << 16> _data; // create buffer
+    auto asio_buffer = boost::asio::buffer(_data); // asio buffer type
+    boost::asio::ip::udp::endpoint sender_endpoint; // asio endpoint
+    
+    size_t bytes_received = _socket.async_receive_from(asio_buffer, sender_endpoint, yield);
+    // receive packet asynchronously. 'yield' is the yield context
+    
+    CapnpReader reader(asio_buffer); // perform the unpacking
+    
+    auto msg = reader.getMessage(); //msg is of type msg::Message::Reader
+    
+    if(msg.hasAdvertisement()) {
+      // ...
+    }
+    ~~~~
+
+    For more details about coroutines and yield contexts, see <a href="http://www.boost.org/doc/libs/release/doc/html/boost_asio/overview/core/spawn.html">asio's documentation on this topic.</a>
+    */
     inline msg::Message::Reader getMessage() {
       return reader.getRoot<msg::Message>();
     }

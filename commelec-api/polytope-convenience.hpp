@@ -20,6 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 // 
+/*! \file
+ * \brief Convenience function for (type-safe) definition of a convex polytope in a Commelec Advertisement
+ * using <a href="http://eigen.tuxfamily.org">Eigen3</a> matrix and vector types
+*/
+
 #ifndef POLYTOPE_CONVENIENCE_HPP
 #define POLYTOPE_CONVENIENCE_HPP
 

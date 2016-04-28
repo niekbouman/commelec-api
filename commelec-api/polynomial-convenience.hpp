@@ -25,9 +25,13 @@
 
 // Niek J. Bouman (EPFL, 2014)
 //
-// Convenience function for (type-safe) definition of a polynomial 
-// in a Commelec Advertisement
-//
+/*! \file
+ * \brief Convenience function for (type-safe) definition of a polynomial in a Commelec Advertisement
+ * 
+ * Although the polynomial type is used in the high-level API, they are deprecated, because 
+ * it is also possible to encode a polynomial using a RealExpr.
+*/
+
 // Example:
 //
 //  to initialize a cost function as the polynomial f(P,Q) = 4 + 4 P + 5 P^3 Q^2,
@@ -167,6 +171,50 @@ inline MonomialSum operator+(MonomialSum s, Monomial a) {
   s.m.push_back(a);
   return s;
 }
+
+/**
+Function to easily describe a uni- or multivariate polynomial over the reals [deprecated]
+
+This functionality is deprecated, because the same behavior can be obtained using RealExpr-essions.
+Nonetheless, we include a description because the Polynomial type is used in the high-level API.
+
+The basic idea is that one first declares the indeterminates (using the PolyVar type), and then 
+build the polynomial expression.
+
+Let us start by encoding a univariate second-degree polynomial in x, for example: 3 x^2 + 2 x + 5 
+
+~~~~{.cpp}
+namespace cv;
+using msg::RealExpr;
+
+::capnp::MallocMessageBuilder mesg;
+
+auto expr = mesg.initRoot<RealExpr>();
+
+PolyVar x("X");
+
+buildRealExpr(expr.initPolynomial(), 3 * (x^2) + 2 * x + 5));
+~~~~  
+Note the parenthesis, which are mandatory, around the monomial x^2.
+
+To create a multivariate polynomial, one uses the | operator.
+Let us demonstrate this by writing the polynomial 2 x^2 y^3 + 3 x y,
+
+~~~~{.cpp}
+namespace cv;
+using msg::RealExpr;
+
+::capnp::MallocMessageBuilder mesg;
+
+auto expr = mesg.initRoot<RealExpr>();
+
+PolyVar x("X");
+PolyVar y("Y");
+
+buildRealExpr(expr.initPolynomial(),  2 * (x^2|y^3) + 3 * (x|y));
+~~~~  
+
+*/
 
 inline void buildPolynomial(msg::Polynomial::Builder poly,MonomialSum m) {
   // initialize polynomial in capnp message based on
