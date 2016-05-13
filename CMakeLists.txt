@@ -30,6 +30,8 @@ else()
   set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ ${ADDITIONAL_LINKER_FLAGS}")
 endif()
 
+add_definitions(-DBOOST_ASIO_HAS_STD_CHRONO)
+
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
