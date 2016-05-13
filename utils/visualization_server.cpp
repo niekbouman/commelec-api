@@ -18,6 +18,7 @@
 
 #include <boost/asio.hpp>
 
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <limits>
