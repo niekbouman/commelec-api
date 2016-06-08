@@ -54,6 +54,26 @@ const lest::test specification[] =
 
   }},
 
+  {CASE( "Test zenone" )
+  {
+
+    // Build a message
+    ::capnp::MallocMessageBuilder message;
+    auto adv = message.initRoot<msg::Advertisement>();
+
+    double err = 600;
+
+    _zenoneAdvertisement(adv, -8000, 0, 1000, err, 0, 0, 0, 0);
+ 
+    AdvFunc interpreter(adv);
+    
+    Eigen::AlignedBoxXd b = interpreter.rectangularHull(adv.getBeliefFunction(),{{"P",-14600},{"Q",0}});
+    std::cout << b.min() << std::endl ;
+    std::cout << b.max()  << std::endl ;
+    EXPECT(true);
+
+  }},
+
   {CASE( "Testing evaluation and differentiation of a polynomial-like expression" )
   {
 

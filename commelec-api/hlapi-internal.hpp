@@ -94,5 +94,14 @@ void _uniformRealDiscreteDeviceAdvertisement(
     double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
     double Pimp, double Qimp);
 
+void _zenoneAdvertisement(
+    msg::Advertisement::Builder adv, double Pmin,
+    double Pmax, // active power bounds
+    double stepSize,
+    double accumulatedError,   //
+    double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
+    double Pimp, double Qimp);
+
+
 #endif
 

@@ -420,6 +420,59 @@ void addCase(msg::ExprCase<msg::RealExpr>::Builder caseItem, double value,
   caseItem.initExpression().setReal(value);
 }
 
+class ZenoneBelief {
+  // Belief function for the Zenone load emulator in the microgrid lab
+public:
+  void makeBelief(msg::SetExpr::Builder bf, double stepSize, double error,
+                  double Pmin, double Pmax) {
+    using namespace cv;
+    auto beliefRect = bf.initRectangle(2);
+
+
+    Var P("P");
+
+    Real step(stepSize);
+    Real err(error);
+
+    Real corr(fmod(Pmin, stepSize));
+    // correction to align rounding to the value of Pmin
+
+    auto Plowerbound = beliefRect[0].initBoundA();
+    auto Pupperbound = beliefRect[0].initBoundB();
+    Plowerbound.setName("x"); // we want to reuse this function value, we call it x
+    Ref projectedP("x"); // create a Ref object for x so that we can use it with the 'buildRealExpr' function
+
+    auto cd = Plowerbound.initCaseDistinction();
+    
+    cd.initVariables(1).set(0, "P"); // case distinction on P
+
+    auto inf = std::numeric_limits<double>::infinity();
+    auto cases = cd.initCases(3);
+    addCase(cases[0], Pmin, -inf, Pmin + error);
+    addCase(cases[1], Pmax, Pmax + error, inf);
+    // if (P - error) lies outside the PQ profile, we project to the boundary
+
+    auto interval = cases[2].initSet().initRectangle(1);
+    interval[0].initBoundA().setReal(-inf);
+    interval[0].initBoundB().setReal(inf);
+    // else we perform rounding 
+    // (we implement the "else" clause using the interval (-infinity,+infinity)
+    // which is safe because case-distinction evaluation order follows list order,
+    // hence this interval is checked last)
+
+    buildRealExpr(cases[2].initExpression(),
+                  step * round((P - err - corr) / step) + corr);
+
+    buildRealExpr(Pupperbound, Real(249.0/250.0) * projectedP + Real(100));
+
+    auto Qlowerbound = beliefRect[1].initBoundA();
+    auto Qupperbound = beliefRect[1].initBoundB();
+
+    buildRealExpr(Qlowerbound, Real(0.095) * projectedP - Real(150));
+    buildRealExpr(Qupperbound, Real(0.09) * projectedP - Real(40));
+  }
+};
+
 class RoundBelief {
 public:
   void makeBelief(msg::SetExpr::Builder bf, double stepSize, double error,
@@ -527,8 +580,8 @@ public:
     auto rectangularPQprof = adv.initPQProfile().initRectangle(2);
     rectangularPQprof[0].initBoundA().setReal(Pmin);
     rectangularPQprof[0].initBoundB().setReal(Pmax);
-    rectangularPQprof[1].initBoundA().setReal(Qimp);
-    rectangularPQprof[1].initBoundB().setReal(Qimp);
+    rectangularPQprof[1].initBoundA().setReal(0.0); //used to be: Qimp
+    rectangularPQprof[1].initBoundB().setReal(0.0); //            Qimp
 
     makeBelief(adv.initBeliefFunction(), params...);
 
@@ -575,6 +628,18 @@ void _uniformRealDiscreteDeviceAdvertisement(
     double Pimp,
     double Qimp) {
   DiscreteDevice<RoundBelief>{}.makeAdvertisement(
+      adv, Pmin, Pmax, alpha, beta, Pimp, Qimp, stepSize, accumulatedError, Pmin, Pmax);
+}
+
+void _zenoneAdvertisement(
+    msg::Advertisement::Builder adv, 
+    double Pmin, double Pmax,  // active power bounds
+    double stepSize,
+    double accumulatedError,   //
+    double alpha, double beta, // cost function: f(P,Q) = alpha P^2 + beta P
+    double Pimp,
+    double Qimp) {
+  DiscreteDevice<ZenoneBelief>{}.makeAdvertisement(
       adv, Pmin, Pmax, alpha, beta, Pimp, Qimp, stepSize, accumulatedError, Pmin, Pmax);
 }
 

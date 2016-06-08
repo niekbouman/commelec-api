@@ -47,6 +47,7 @@ enum class Resource {
   uncontrollableGenerator,
   discrete,
   discreteUnif,
+  zenone,
   custom
 };
 using ResourceMap = std::unordered_map<std::string, Resource> ;
@@ -143,6 +144,24 @@ void createDiscreteUnifAdv(msg::Message::Builder msg, rapidjson::Document &d) {
                                           coeffP, Pimp, Qimp);
   return;
 }
+
+void createZenoneAdv(msg::Message::Builder msg, rapidjson::Document &d) {
+  auto Pmin = getDouble(d,"Pmin");
+  auto Pmax = getDouble(d,"Pmax");
+  auto stepsize = getDouble(d,"stepsize");
+  auto error = getDouble(d,"error");
+
+  auto coeffP = getDouble(d,"coeffP");
+  auto coeffPsquared = getDouble(d,"coeffPsquared");
+  auto Pimp = getDouble(d,"Pimp");
+  auto Qimp = getDouble(d,"Qimp");
+
+  _zenoneAdvertisement(msg.initAdvertisement(), Pmin, Pmax,
+                                          stepsize, error, coeffPsquared,
+                                          coeffP, Pimp, Qimp);
+  return;
+}
+
 
 void createFuelCellAdv(msg::Message::Builder msg, rapidjson::Document& d) {
   createBattAdv(msg, d);
@@ -347,6 +366,11 @@ private:
           createDiscreteUnifAdv(msg, d);
           break;
 
+        case Resource::zenone:
+          createZenoneAdv(msg, d);
+          break;
+
+
         default:
           break;
         }
@@ -511,6 +535,7 @@ int main(int argc, char *argv[]) {
                          {"uncontr-gen", Resource::uncontrollableGenerator},
                          {"custom", Resource::custom},
                          {"discrete-uniform", Resource::discreteUnif},
+                         {"zenone", Resource::zenone},
                          {"discrete", Resource::discrete}});
 
   boost::asio::io_service io_service;
