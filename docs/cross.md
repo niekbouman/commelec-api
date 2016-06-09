@@ -74,7 +74,7 @@ Create build environment
 cd commelec-api
 mkdir arm_build
 cd arm_build
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../toolchains/linux-arm-toolchain.cmake .. 
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../toolchains/linux-arm-toolchain.cmake -GNinja .. 
 ```
 At this step, CMake will complain if it cannot find the libraries.
 If everthing goes well, you can build the project
