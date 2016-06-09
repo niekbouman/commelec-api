@@ -11,6 +11,8 @@
 #       Schema file source prefix (default: CMAKE_CURRENT_SOURCE_DIR).
 #   CAPNPC_FLAGS
 #       Additional flags to pass to the schema compiler.
+#   CAPNP_STATIC
+#       If defined, use Cap'n Proto's static libraries (.a) instead of shared libraries.
 #
 # Variables that are discovered:
 #   CAPNP_EXECUTABLE
@@ -135,22 +137,38 @@ find_package(PkgConfig QUIET)
 pkg_check_modules(PKGCONFIG_CAPNP capnp)
 pkg_check_modules(PKGCONFIG_CAPNP_RPC capnp-rpc QUIET)
 
-find_library(CAPNP_LIB_KJ kj
-  HINTS "${PKGCONFIG_CAPNP_LIBDIR}" ${PKGCONFIG_CAPNP_LIBRARY_DIRS}
-)
-find_library(CAPNP_LIB_KJ-ASYNC kj-async
-  HINTS "${PKGCONFIG_CAPNP_RPC_LIBDIR}" ${PKGCONFIG_CAPNP_RPC_LIBRARY_DIRS}
-)
-find_library(CAPNP_LIB_CAPNP capnp
-  HINTS "${PKGCONFIG_CAPNP_LIBDIR}" ${PKGCONFIG_CAPNP_LIBRARY_DIRS}
-)
-find_library(CAPNP_LIB_CAPNP-RPC capnp-rpc
-  HINTS "${PKGCONFIG_CAPNP_RPC_LIBDIR}" ${PKGCONFIG_CAPNP_RPC_LIBRARY_DIRS}
-)
+if(DEFINED CAPNP_STATIC)
+  find_library(CAPNP_LIB_KJ libkj.a kj
+    HINTS "${PKGCONFIG_CAPNP_LIBDIR}" ${PKGCONFIG_CAPNP_LIBRARY_DIRS}
+  )
+  find_library(CAPNP_LIB_KJ-ASYNC libkj-async.a kj-async
+    HINTS "${PKGCONFIG_CAPNP_RPC_LIBDIR}" ${PKGCONFIG_CAPNP_RPC_LIBRARY_DIRS}
+  )
+  find_library(CAPNP_LIB_CAPNP libcapnp.a capnp
+    HINTS "${PKGCONFIG_CAPNP_LIBDIR}" ${PKGCONFIG_CAPNP_LIBRARY_DIRS}
+  )
+  find_library(CAPNP_LIB_CAPNP-RPC libcapnp-rpc.a capnp-rpc
+    HINTS "${PKGCONFIG_CAPNP_RPC_LIBDIR}" ${PKGCONFIG_CAPNP_RPC_LIBRARY_DIRS}
+  )
+else()
+  find_library(CAPNP_LIB_KJ kj
+    HINTS "${PKGCONFIG_CAPNP_LIBDIR}" ${PKGCONFIG_CAPNP_LIBRARY_DIRS}
+  )
+  find_library(CAPNP_LIB_KJ-ASYNC kj-async
+    HINTS "${PKGCONFIG_CAPNP_RPC_LIBDIR}" ${PKGCONFIG_CAPNP_RPC_LIBRARY_DIRS}
+  )
+  find_library(CAPNP_LIB_CAPNP capnp
+    HINTS "${PKGCONFIG_CAPNP_LIBDIR}" ${PKGCONFIG_CAPNP_LIBRARY_DIRS}
+  )
+  find_library(CAPNP_LIB_CAPNP-RPC capnp-rpc
+    HINTS "${PKGCONFIG_CAPNP_RPC_LIBDIR}" ${PKGCONFIG_CAPNP_RPC_LIBRARY_DIRS}
+  )
+endif()
+
 mark_as_advanced(CAPNP_LIB_KJ CAPNP_LIB_KJ-ASYNC CAPNP_LIB_CAPNP CAPNP_LIB_CAPNP-RPC)
 set(CAPNP_LIBRARIES_LITE
-  ${CAPNP_LIB_CAPNP}
   ${CAPNP_LIB_KJ}
+  ${CAPNP_LIB_CAPNP}
 )
 set(CAPNP_LIBRARIES
   ${CAPNP_LIBRARIES_LITE}
