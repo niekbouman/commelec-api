@@ -14,17 +14,23 @@ Cross compiling the Commelec API for ARM consists of a number of steps
 Follow the [Debian Cross Toolchain instructions](https://wiki.debian.org/CrossToolchains) for setting up a cross build environment.
 It is important to choose **armel** as the foreign architecture.
 
-Depending on whether you run stable or unstable, you need to add the emdebian repository (see the Cross Toolcha instructions). Then:
+Depending on whether you run stable or unstable, you need to add the emdebian repository (see the Cross Toolchain instructions). Then:
 
 ```
 sudo dpkg --add-architecture armel
 sudo apt-get update
-sudo apt-get install crossbuild-essential-armhf
+sudo apt-get install crossbuild-essential-armel
 ```
+
+There should now be a `arm-linux-gnueabi-g++` binary available on the system.
 
 ## Installing armel versions of Boost 
 
-Now install :armel versions of boost-context, boost-coroutine, boost-system, boost-filesystem and boost-chrono
+Now install :armel versions of boost-context, boost-coroutine, boost-system, boost-filesystem,
+i.e.
+```
+sudo apt install libboost-system-dev:armel libboost-context-dev:armel libboost-coroutine-dev:armel libboost-filesystem-dev:armel 
+```
 
 ## Putting symlinks to libraries so that cmake can find them
 
