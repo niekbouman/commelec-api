@@ -32,7 +32,7 @@ RUN cd commelec-api \
  && ninja
 ```
 
-To use this Dockerfile, first make sure that you have installed [Docker](http://www.docker.com). Then, create a directory somewhere and put the above in a file that is named `Dockerfile`, or download the above as a file [here](../docker/Dockerfile). 
+To use this Dockerfile, first make sure that you have installed [Docker](http://www.docker.com). Then, create a directory somewhere and put the above in a file that is named `Dockerfile`, or download the above as a file [here](https://raw.githubusercontent.com/niekbouman/commelec-api/master/docker/Dockerfile). 
 
 Launch a docker console, and change to the directory that contains the Dockerfile.
 Then, issue
