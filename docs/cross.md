@@ -46,13 +46,14 @@ sudo ln -s /usr/include/boost boost
 ```
 
 ## Cross-compiling the Capnproto library
+For this step it is important that you already have the capnproto library and its tools installed on the host system.
 
 ```
 wget https://capnproto.org/capnproto-c++-0.5.3.tar.gz
 tar zxf capnproto-c++-0.5.3.tar.gz
 cd capnproto-c++-0.5.3
 ./configure --with-external-capnp --host=arm-linux-gnueabi --target=arm-linux-gnueabi
-make -j6
+make
 ```
 Assuming that the build is successful, we now symlink the headers and copy the static libraries to our cross-build environment:
 ``` 
